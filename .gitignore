@@ -1,6 +1,7 @@
 node_modules/
 frontend/node_modules/
 .env
+hiking_trail_matcher/
 __pycache__/
 *.pyc
 .coverage
