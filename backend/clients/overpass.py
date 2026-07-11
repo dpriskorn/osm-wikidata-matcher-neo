@@ -1,7 +1,10 @@
+import logging
 import httpx
 from typing import Any, Self
 from pydantic import BaseModel
 
+
+log = logging.getLogger(__name__)
 
 OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"
 
@@ -25,6 +28,7 @@ class OverpassClient:
         await self._client.aclose()
 
     async def query(self, overpass_query: str) -> dict[str, Any]:
+        log.debug(f"Executing Overpass query")
         response = await self._client.post(
             OVERPASS_API_URL,
             data={"data": overpass_query},
@@ -34,6 +38,7 @@ class OverpassClient:
 
     def parse_results(self, data: dict[str, Any]) -> list[OverpassResult]:
         elements = data.get("elements", [])
+        log.debug(f"Overpass returned {len(elements)} elements")
         results = []
         for el in elements:
             osm_type = el.get("type")
@@ -53,4 +58,5 @@ class OverpassClient:
                     lat=lat,
                     lon=lon,
                 ))
+        log.info(f"Parsed {len(results)} OSM objects from {len(elements)} elements")
         return results

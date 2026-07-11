@@ -1,5 +1,5 @@
 api:
-    cd backend && poetry run uvicorn main:app --reload --port 8000
+    cd backend && LOG_LEVEL=DEBUG poetry run uvicorn main:app --reload --port 8000
 
 vite:
     cd frontend && npm run dev

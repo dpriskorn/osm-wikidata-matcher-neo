@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -6,6 +7,8 @@ from clients.overpass import OverpassClient
 from matcher import NameMatcher, BBoxMatcher
 from config import get_config, get_all_configs, get_wikidata_settings
 
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["matcher"])
 
@@ -66,11 +69,13 @@ async def list_object_types():
 
 @router.get("/types/{object_type}/candidates", response_model=list[CandidateInfo])
 async def get_candidates(object_type: str):
+    log.info(f"Getting candidates for object_type={object_type}")
     config = get_config(object_type)
     settings = get_wikidata_settings()
     async with WikidataClient(access_token=settings.access_token) as wikidata:
         results = await wikidata.sparql_query(config.wikidata.sparql_query)
         items = wikidata.parse_sparql_result(results, config.wikidata.label_property)
+        log.info(f"Returning {len(items)} candidates for {object_type}")
         return [
             CandidateInfo(
                 qid=item.qid,
@@ -83,12 +88,14 @@ async def get_candidates(object_type: str):
 
 @router.get("/types/{object_type}/candidates/{qid}/matches", response_model=MatchResponse)
 async def get_matches(object_type: str, qid: str):
+    log.info(f"Finding matches for object_type={object_type}, qid={qid}")
     config = get_config(object_type)
     settings = get_wikidata_settings()
     async with WikidataClient(access_token=settings.access_token) as wikidata, OverpassClient() as overpass:
         item = await wikidata.get_item(qid)
         matcher = get_matcher_type(config, wikidata, overpass)
         matches = await matcher.find_matches(item)
+        log.info(f"Returning {len(matches)} matches for {qid}")
         return MatchResponse(
             qid=qid,
             label=item.label,

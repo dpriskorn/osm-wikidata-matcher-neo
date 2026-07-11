@@ -1,9 +1,12 @@
+import logging
 import httpx
 import re
 from typing import Any, Self
 from datetime import datetime, timezone
 from pydantic import BaseModel
 
+
+log = logging.getLogger(__name__)
 
 WIKIDATA_SPARQL_URL = "https://query.wikidata.org/sparql"
 WIKIDATA_API_URL = "https://www.wikidata.org/w/api.php"
@@ -34,6 +37,7 @@ class WikidataClient:
         await self._client.aclose()
 
     async def sparql_query(self, query: str) -> list[dict[str, Any]]:
+        log.debug("Executing SPARQL query")
         headers = {
             "Accept": "application/sparql-results+json",
             "User-Agent": "wikidata-osm-matcher/0.1.0",
@@ -45,7 +49,9 @@ class WikidataClient:
         )
         response.raise_for_status()
         data = response.json()
-        return data.get("results", {}).get("bindings", [])
+        results = data.get("results", {}).get("bindings", [])
+        log.debug(f"SPARQL returned {len(results)} raw results")
+        return results
 
     async def get_item(self, qid: str) -> WikidataItem:
         query = f"""
@@ -132,6 +138,7 @@ class WikidataClient:
                 country_label=r.get("countryLabel", {}).get("value"),
                 coord=coord,
             ))
+        log.info(f"Parsed {len(items)} Wikidata items from {len(results)} bindings")
         return items
 
     def _extract_qid(self, uri: str) -> str | None:

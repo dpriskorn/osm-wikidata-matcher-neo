@@ -1,9 +1,13 @@
+import logging
 import math
 from typing import Any
 from clients.wikidata import WikidataItem, WikidataClient
 from clients.overpass import OverpassClient
 from matcher.base import Matcher, MatchCandidate
 from config import ObjectTypeConfig
+
+
+log = logging.getLogger(__name__)
 
 
 class BBoxMatcher(Matcher[WikidataItem]):
@@ -24,9 +28,11 @@ class BBoxMatcher(Matcher[WikidataItem]):
 
     async def find_matches(self, wikidata_item: WikidataItem) -> list[MatchCandidate[WikidataItem]]:
         if not wikidata_item.coord:
+            log.warning(f"BBoxMatcher: no coordinates for {wikidata_item.label}")
             return []
 
         bbox = self._coord_to_bbox(wikidata_item.coord.lat, wikidata_item.coord.lon)
+        log.debug(f"BBoxMatcher: bbox={bbox} for {wikidata_item.label} at {wikidata_item.coord.lat},{wikidata_item.coord.lon}")
         query = self.config.overpass.query.replace("{{bbox}}", bbox)
 
         raw_results = await self.overpass.query(query)
@@ -45,6 +51,9 @@ class BBoxMatcher(Matcher[WikidataItem]):
                 ))
 
         candidates.sort(key=lambda c: c.similarity, reverse=True)
+        log.info(f"BBoxMatcher: found {len(candidates)} matches for {wikidata_item.label}")
+        for c in candidates:
+            log.debug(f"  - {c.osm_type}/{c.osm_id} '{c.osm_name}' similarity={c.similarity:.2f}")
         return candidates
 
     def _coord_to_bbox(self, lat: float, lon: float) -> str:

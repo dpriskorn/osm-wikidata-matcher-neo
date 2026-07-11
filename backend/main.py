@@ -1,5 +1,19 @@
+import logging
+import os
+import sys
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+logging.basicConfig(
+    level=os.environ.get("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    stream=sys.stdout,
+    force=True,
+)
+
+log = logging.getLogger(__name__)
+
 from routers import matcher
 
 
@@ -19,3 +33,6 @@ app.include_router(matcher.router)
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+log.info("Wikidata-OSM Matcher started")
