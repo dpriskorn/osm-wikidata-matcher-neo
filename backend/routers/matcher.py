@@ -24,6 +24,7 @@ class CandidateInfo(BaseModel):
     label: str
     country: str | None = None
     country_label: str | None = None
+    coord: WikidataCoordinates | None = None
 
 
 class CountryInfo(BaseModel):
@@ -114,6 +115,7 @@ async def get_candidates(type_qid: str, country_qid: str):
                 qid=item.qid,
                 label=item.label,
                 country_label=item.country_label,
+                coord=item.coord,
             )
             for item in filtered
         ]

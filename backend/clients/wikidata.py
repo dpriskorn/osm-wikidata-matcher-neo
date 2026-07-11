@@ -50,9 +50,10 @@ class WikidataClient:
 
     async def get_item(self, qid: str) -> WikidataItem:
         query = f"""
-        SELECT ?itemLabel ?country ?countryLabel WHERE {{
+        SELECT ?itemLabel ?country ?countryLabel ?coord WHERE {{
           BIND(wd:{qid} AS ?item)
           OPTIONAL {{ ?item wdt:P17 ?country }}
+          OPTIONAL {{ ?item wdt:P625 ?coord }}
           SERVICE wikibase:label {{ bd:serviceParam wikibase:language "sv,en". }}
         }}
         """
@@ -60,11 +61,15 @@ class WikidataClient:
         if not results:
             raise ValueError(f"Item {qid} not found")
         r = results[0]
+        coord = None
+        if coord_str := r.get("coord", {}).get("value"):
+            coord = self._parse_coord(coord_str)
         return WikidataItem(
             qid=qid,
             label=r.get("itemLabel", {}).get("value", ""),
             country=self._extract_qid(r.get("country", {}).get("value")),
             country_label=r.get("countryLabel", {}).get("value"),
+            coord=coord,
         )
 
     async def update_property(self, qid: str, property_id: str, value: str) -> bool:

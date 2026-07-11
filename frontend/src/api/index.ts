@@ -15,6 +15,7 @@ export interface CandidateInfo {
   label: string
   country: string | null
   country_label: string | null
+  coord: { lat: number; lon: number } | null
 }
 
 export interface CountryInfo {
