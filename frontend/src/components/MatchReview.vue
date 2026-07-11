@@ -24,6 +24,7 @@ const statusMsg = ref<string | null>(null)
 const mapContainer = ref<HTMLDivElement | null>(null)
 const authStatus = ref<AuthStatus>({ logged_in: false, username: null })
 let map: L.Map | null = null
+let markersLayer: L.LayerGroup | null = null
 
 onMounted(async () => {
   authStatus.value = await getAuthStatus()
@@ -32,8 +33,21 @@ onMounted(async () => {
 
 watch(data, async () => {
   await nextTick()
-  if (data.value?.coord && mapContainer.value && !map) {
+  if (!data.value?.coord || !mapContainer.value) return
+
+  if (!map) {
     initMap()
+  } else if (data.value) {
+    addMarkers()
+    map.setView([data.value.coord.lat, data.value.coord.lon], 16)
+  }
+})
+
+watch(() => props.qid, () => {
+  if (map) {
+    map.remove()
+    map = null
+    markersLayer = null
   }
 })
 
@@ -47,9 +61,21 @@ function initMap() {
     attribution: '© OpenStreetMap'
   }).addTo(map)
 
-  L.marker([wdCoord.lat, wdCoord.lon], {
-    icon: L.divIcon({ className: 'wd-marker', html: '📍', iconSize: [24, 24] })
-  }).addTo(map).bindPopup(`Wikidata: ${data.value?.label}`)
+  markersLayer = L.layerGroup().addTo(map)
+
+  addMarkers()
+}
+
+function addMarkers() {
+  if (!map || !markersLayer || !data.value) return
+
+  markersLayer.clearLayers()
+
+  if (data.value.coord) {
+    L.marker([data.value.coord.lat, data.value.coord.lon], {
+      icon: L.divIcon({ className: 'wd-marker', html: '📍', iconSize: [24, 24] })
+    }).bindPopup(`Wikidata: ${data.value?.label}`).addTo(markersLayer)
+  }
 
   data.value.matches.forEach(m => {
     if (m.lat && m.lon) {
@@ -60,7 +86,7 @@ function initMap() {
         color: '#fff',
         weight: 2,
         fillOpacity: 0.8
-      }).addTo(map!).bindPopup(`OSM: ${m.osm_name || m.osm_type}/${m.osm_id}<br>${formatDistance(m.distance_m)}`)
+      }).bindPopup(`OSM: ${m.osm_name || m.osm_type}/${m.osm_id}<br>${formatDistance(m.distance_m)}`).addTo(markersLayer)
     }
   })
 }
