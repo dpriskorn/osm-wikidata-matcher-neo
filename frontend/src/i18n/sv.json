@@ -27,6 +27,7 @@
     "noMatchesFound": "Inga OSM-kandidater hittades.",
     "viewInOSM": "Visa i OSM ↗",
     "createInOSM": "Skapa i OSM ↗",
+    "josmAddNode": "Lägg till ny nod med JOSM",
     "osmTypeId": "{type}/{id}",
     "wikidataLinkExists": "✓ Wikidata-länk finns i OSM",
     "similarity": "{percent}%",

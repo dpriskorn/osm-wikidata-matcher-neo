@@ -27,6 +27,7 @@
     "noMatchesFound": "No OSM candidates found.",
     "viewInOSM": "View in OSM ↗",
     "createInOSM": "Create in OSM ↗",
+    "josmAddNode": "Add new node using JOSM",
     "osmTypeId": "{type}/{id}",
     "wikidataLinkExists": "✓ Wikidata link exists in OSM",
     "similarity": "{percent}%",

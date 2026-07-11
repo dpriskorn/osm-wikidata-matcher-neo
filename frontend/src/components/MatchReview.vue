@@ -129,6 +129,19 @@ function getOsmEditUrl(lat: number, lon: number, zoom: number): string {
   return `https://www.openstreetmap.org/edit?lat=${lat}&lon=${lon}&zoom=${zoom}`
 }
 
+function getJosmUrl(lat: number, lon: number, label: string): string {
+  const osmXml = `<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6" generator="Wikidata-OSM Matcher">
+  <node id="-1" lat="${lat}" lon="${lon}" version="0">
+    <tag k="wikidata" v="${props.qid}"/>
+    <tag k="leisure" v="bathing_place"/>
+    <tag k="name" v="${label}"/>
+  </node>
+</osm>`
+  const encoded = encodeURIComponent(osmXml)
+  return `http://localhost:8111/load_data?new_layer=true&data=${encoded}`
+}
+
 function getSimilarityClass(sim: number): string {
   if (sim >= 0.7) return 'bg-success'
   if (sim >= 0.5) return 'bg-warning'
@@ -220,6 +233,10 @@ function filteredTags(tags: Record<string, string>): Record<string, string> {
           <a :href="getOsmEditUrl(data.coord.lat, data.coord.lon, 18)"
              target="_blank" class="btn btn-success">
             {{ t('matchReview.createInOSM') }}
+          </a>
+          <a :href="getJosmUrl(data.coord.lat, data.coord.lon, data.label)"
+              target="_blank" class="btn btn-warning">
+            {{ t('matchReview.josmAddNode') }}
           </a>
         </div>
       </div>
