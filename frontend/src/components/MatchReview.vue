@@ -18,7 +18,7 @@ const router = useRouter()
 const loading = ref(true)
 const error = ref<string | null>(null)
 const data = ref<MatchResponse | null>(null)
-const confirming = ref(false)
+const confirmingId = ref<string | null>(null)
 const statusMsg = ref<string | null>(null)
 const mapContainer = ref<HTMLDivElement | null>(null)
 let map: L.Map | null = null
@@ -76,7 +76,7 @@ async function load() {
 }
 
 async function handleConfirm(osmId: string, osmType: string, osmName: string) {
-  confirming.value = true
+  confirmingId.value = osmId
   statusMsg.value = null
   try {
     await confirmMatch(props.typeQid, props.countryQid, props.divisionQid, props.qid, osmId, osmType, osmName)
@@ -85,7 +85,7 @@ async function handleConfirm(osmId: string, osmType: string, osmName: string) {
   } catch (e) {
     error.value = t('matchReview.couldNotSaveMatch')
   } finally {
-    confirming.value = false
+    confirmingId.value = null
   }
 }
 
@@ -219,17 +219,18 @@ function filteredTags(tags: Record<string, string>): Record<string, string> {
                 </span>
               </small>
             </div>
-            <div class="d-flex gap-2">
+              <div class="d-flex gap-2">
               <a :href="getEditUrl(m.osm_type, m.osm_id, m.zoom)"
-                 target="_blank" class="btn btn-outline-primary btn-sm">
+                 target="_blank" class="btn btn-outline-primary btn-sm"
+                 :class="{ disabled: confirmingId !== null }">
                 {{ t('matchReview.editInOSM') }}
               </a>
               <button
                 @click="handleConfirm(m.osm_id, m.osm_type, m.osm_name)"
-                :disabled="confirming"
+                :disabled="confirmingId !== null"
                 class="btn btn-success btn-sm"
               >
-                {{ confirming ? t('matchReview.saving') : t('matchReview.uploadOsmIdToWikidata') }}
+                {{ confirmingId === m.osm_id ? t('matchReview.saving') : t('matchReview.uploadOsmIdToWikidata') }}
               </button>
             </div>
           </div>
