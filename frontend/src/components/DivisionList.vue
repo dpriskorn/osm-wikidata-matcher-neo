@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getDivisions, type DivisionInfo } from '../api'
+import { getDivisions, getWikidataLabel, type DivisionInfo } from '../api'
 
 const props = defineProps<{
   typeQid: string
@@ -11,17 +11,30 @@ const props = defineProps<{
 const router = useRouter()
 const divisions = ref<DivisionInfo[]>([])
 const loading = ref(true)
+const labelsLoading = ref(true)
 const error = ref<string | null>(null)
+const labels = ref<Record<string, string>>({})
 
 onMounted(async () => {
   try {
     divisions.value = await getDivisions(props.typeQid, props.countryQid)
+    await fetchLabels()
   } catch (e) {
     error.value = 'Kunde inte ladda administrativa enheter'
   } finally {
     loading.value = false
+    labelsLoading.value = false
   }
 })
+
+async function fetchLabels() {
+  const results = await Promise.all(
+    divisions.value.map(d => getWikidataLabel(d.qid, 'sv'))
+  )
+  results.forEach((label, i) => {
+    labels.value[divisions.value[i].qid] = label
+  })
+}
 
 function selectDivision(division: DivisionInfo) {
   router.push(`/${props.typeQid}/${props.countryQid}/${division.qid}`)
@@ -35,7 +48,7 @@ function selectDivision(division: DivisionInfo) {
       <button @click="router.push(`/${typeQid}`)" class="btn btn-sm btn-outline-secondary">← Tillbaka</button>
     </div>
     <div class="card-body">
-      <p v-if="loading" class="text-muted">Laddar...</p>
+      <p v-if="loading || labelsLoading" class="text-muted">Laddar...</p>
       <p v-if="error" class="text-danger">{{ error }}</p>
       <p v-else-if="divisions.length === 0" class="text-muted">Inga enheter hittades.</p>
       <div v-else class="list-group">
@@ -45,7 +58,7 @@ function selectDivision(division: DivisionInfo) {
           @click="selectDivision(d)"
           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
         >
-          {{ d.label }}
+          {{ labels[d.qid] || d.qid }}
           <span class="badge bg-primary rounded-pill">{{ d.count }}</span>
         </button>
       </div>

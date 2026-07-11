@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getCountries, type CountryInfo } from '../api'
+import { getCountries, getWikidataLabel, type CountryInfo } from '../api'
 
 const props = defineProps<{
   typeQid: string
@@ -10,17 +10,30 @@ const props = defineProps<{
 const router = useRouter()
 const countries = ref<CountryInfo[]>([])
 const loading = ref(true)
+const labelsLoading = ref(true)
 const error = ref<string | null>(null)
+const labels = ref<Record<string, string>>({})
 
 onMounted(async () => {
   try {
     countries.value = await getCountries(props.typeQid)
+    await fetchLabels()
   } catch (e) {
     error.value = 'Kunde inte ladda länder'
   } finally {
     loading.value = false
+    labelsLoading.value = false
   }
 })
+
+async function fetchLabels() {
+  const results = await Promise.all(
+    countries.value.map(c => getWikidataLabel(c.qid, 'sv'))
+  )
+  results.forEach((label, i) => {
+    labels.value[countries.value[i].qid] = label
+  })
+}
 
 function selectCountry(country: CountryInfo) {
   router.push(`/${props.typeQid}/${country.qid}`)
@@ -34,7 +47,7 @@ function selectCountry(country: CountryInfo) {
       <button @click="router.push('/')" class="btn btn-sm btn-outline-secondary">← Tillbaka</button>
     </div>
     <div class="card-body">
-      <p v-if="loading" class="text-muted">Laddar...</p>
+      <p v-if="loading || labelsLoading" class="text-muted">Laddar...</p>
       <p v-if="error" class="text-danger">{{ error }}</p>
       <p v-else-if="countries.length === 0" class="text-muted">Inga länder med kandidater hittades.</p>
       <div v-else class="list-group">
@@ -44,7 +57,7 @@ function selectCountry(country: CountryInfo) {
           @click="selectCountry(c)"
           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
         >
-          {{ c.label }}
+          {{ labels[c.qid] || c.qid }}
           <span class="badge bg-primary rounded-pill">{{ c.count }}</span>
         </button>
       </div>
