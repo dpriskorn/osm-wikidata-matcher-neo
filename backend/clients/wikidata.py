@@ -1,18 +1,25 @@
 import logging
 import re
 import os
+import requests
 from datetime import datetime, timezone
 from pydantic import BaseModel
-from wikibaseintegrator import wbi_helpers
-from wikibaseintegrator.wbi_config import config as wbi_config
 
 
 log = logging.getLogger(__name__)
 
 USER_AGENT = "osm-wikidata-matcher-neo 1.0 (https://github.com/anomalyco/opencode)"
-wbi_config["USER_AGENT"] = USER_AGENT
-wbi_config["MEDIAWIKI_API_URL"] = "https://www.wikidata.org/w/api.php"
-wbi_config["SPARQL_ENDPOINT_URL"] = "https://qlever.cs.uni-freiburg.de/api/wikidata"
+
+
+class QleverIntegrator:
+    endpoint: str = "https://qlever.cs.uni-freiburg.de/api/wikidata"
+    session: requests.Session = requests.Session()
+
+    def execute_query(self, query: str) -> dict:
+        params = {'query': query, 'action': 'json_export'}
+        response = self.session.get(self.endpoint, params=params)
+        response.raise_for_status()
+        return response.json()
 
 
 class WikidataCoordinates(BaseModel):
@@ -35,6 +42,7 @@ class WikidataItem(BaseModel):
 class WikidataClient:
     def __init__(self) -> None:
         self._wbi = None
+        self._qlever = QleverIntegrator()
 
     def __enter__(self) -> "WikidataClient":
         return self
@@ -54,21 +62,19 @@ class WikidataClient:
         return self._wbi
 
     def sparql_query(self, query: str) -> list[dict[str, any]]:
-        log.debug("Executing SPARQL query via wikibaseintegrator")
-        data = wbi_helpers.execute_sparql_query(query)
+        log.debug("Executing SPARQL query via Qlever")
+        data = self._qlever.execute_query(query)
         results = data.get("results", {}).get("bindings", [])
         log.debug(f"SPARQL returned {len(results)} raw results")
         return results
 
     def get_item(self, qid: str) -> WikidataItem:
         query = f"""
-        SELECT ?itemLabel ?country ?countryLabel ?coord ?alias ?badkartan WHERE {{
+        SELECT ?country ?coord ?badkartan WHERE {{
           BIND(wd:{qid} AS ?item)
           OPTIONAL {{ ?item wdt:P17 ?country }}
           OPTIONAL {{ ?item wdt:P625 ?coord }}
           OPTIONAL {{ ?item wdt:P9615 ?badkartan }}
-          OPTIONAL {{ ?item skos:altLabel ?alias FILTER(LANG(?alias) = "sv") }}
-          SERVICE wikibase:label {{ bd:serviceParam wikibase:language "sv,en". }}
         }}
         """
         results = self.sparql_query(query)
@@ -80,17 +86,11 @@ class WikidataClient:
         if coord_str := r.get("coord", {}).get("value"):
             coord = self._parse_coord(coord_str)
 
-        aliases = []
-        for result in results:
-            if alias := result.get("alias", {}).get("value"):
-                aliases.append(alias)
-
         return WikidataItem(
             qid=qid,
-            label=r.get("itemLabel", {}).get("value", ""),
-            aliases=aliases,
+            label="",  # Labels fetched via frontend REST API
+            aliases=[],
             country=self._extract_qid(r.get("country", {}).get("value")),
-            country_label=r.get("countryLabel", {}).get("value"),
             coord=coord,
             badkartan=r.get("badkartan", {}).get("value"),
         )
