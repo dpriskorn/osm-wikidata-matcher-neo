@@ -79,10 +79,11 @@ class WikidataClient:
 
     def fetch_item_from_entity_api(self, qid: str) -> dict | None:
         url = f"https://www.wikidata.org/wiki/Special:EntityData/{qid}.json"
-        response = requests.get(url, timeout=10)
+        headers = {"User-Agent": USER_AGENT}
+        response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             return response.json()
-        log.warning(f"EntityData API failed for {qid}")
+        log.warning(f"EntityData API failed for {qid}: {response.status_code}")
         return None
 
     def get_item(self, qid: str) -> WikidataItem:
