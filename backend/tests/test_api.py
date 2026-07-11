@@ -9,20 +9,23 @@ client = TestClient(app)
 
 
 def make_mock_wikidata_client(return_value=None):
-    mock = AsyncMock()
-    mock.__aenter__ = AsyncMock(return_value=mock)
-    mock.__aexit__ = AsyncMock(return_value=None)
+    mock = MagicMock()
+    mock.__enter__ = MagicMock(return_value=mock)
+    mock.__exit__ = MagicMock(return_value=None)
     if return_value is not None:
-        mock.get_item = AsyncMock(return_value=return_value)
+        mock.get_item = MagicMock(return_value=return_value)
     return mock
 
 
 def make_mock_overpass_client(return_value=None):
-    mock = AsyncMock()
-    mock.__aenter__ = AsyncMock(return_value=mock)
-    mock.__aexit__ = AsyncMock(return_value=None)
+    mock = MagicMock()
+    mock.__aenter__ = MagicMock(return_value=mock)
+    mock.__aexit__ = MagicMock(return_value=None)
     if return_value is not None:
         mock.query = AsyncMock(return_value=return_value)
+    else:
+        mock.query = AsyncMock(return_value={"elements": []})
+    mock.parse_results = MagicMock(return_value=[])
     return mock
 
 
@@ -78,12 +81,14 @@ class TestGetMatches:
             country="Q34",
             country_label="Sweden",
         ))
-        mock_op = make_mock_overpass_client()
-        mock_op.query = AsyncMock(return_value={"elements": []})
-        mock_op.parse_results = MagicMock(return_value=[])
+        mock_op_instance = MagicMock()
+        mock_op_instance.query = AsyncMock(return_value={"elements": []})
+        mock_op_instance.parse_results = MagicMock(return_value=[])
+        mock_op_instance.__enter__ = MagicMock(return_value=mock_op_instance)
+        mock_op_instance.__exit__ = MagicMock(return_value=None)
 
         mock_wd_class.return_value = mock_wd
-        mock_op_class.return_value = mock_op
+        mock_op_class.return_value = mock_op_instance
 
         response = client.get("/api/types/Q2143825/countries/Q34/divisions/Q504994/candidates/Q123/matches")
         assert response.status_code == 200

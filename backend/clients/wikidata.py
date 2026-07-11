@@ -33,6 +33,12 @@ class WikidataClient:
     def __init__(self) -> None:
         self._wbi = None
 
+    def __enter__(self) -> "WikidataClient":
+        return self
+
+    def __exit__(self, *args) -> None:
+        pass
+
     def _get_wbi(self):
         if self._wbi is None:
             from wikibaseintegrator import WikibaseIntegrator

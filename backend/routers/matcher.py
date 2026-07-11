@@ -118,8 +118,8 @@ async def get_countries(type_qid: str):
     log.info(f"Getting countries for type_qid={type_qid}")
     object_type, config = get_config_by_qid(type_qid)
     settings = get_wikidata_settings()
-    async with WikidataClient() as wikidata:
-        results = await wikidata.sparql_query(config.wikidata.sparql_query)
+    with WikidataClient() as wikidata:
+        results = wikidata.sparql_query(config.wikidata.sparql_query)
         items = wikidata.parse_sparql_result(results, config.wikidata.label_property)
 
         country_counts: dict[str, tuple[str, int]] = {}
@@ -146,8 +146,8 @@ async def get_divisions(type_qid: str, country_qid: str):
     query = query.replace('?item wdt:P17 ?country .', f'?item wdt:P17 wd:{country_qid} .')
     query += '}'
 
-    async with WikidataClient() as wikidata:
-        results = await wikidata.sparql_query(query)
+    with WikidataClient() as wikidata:
+        results = wikidata.sparql_query(query)
         items = wikidata.parse_sparql_result(results, config.wikidata.label_property)
 
         division_counts: dict[str, tuple[str, int]] = {}
@@ -175,8 +175,8 @@ async def get_candidates_by_division(type_qid: str, country_qid: str, division_q
     query = query.replace('?item wdt:P131 ?division .', f'?item wdt:P131 wd:{division_qid} .')
     query += '}'
 
-    async with WikidataClient() as wikidata:
-        results = await wikidata.sparql_query(query)
+    with WikidataClient() as wikidata:
+        results = wikidata.sparql_query(query)
         items = wikidata.parse_sparql_result(results, config.wikidata.label_property)
         log.info(f"Returning {len(items)} candidates for {object_type} in {country_qid}/{division_qid}")
         return [
@@ -198,8 +198,8 @@ async def get_matches(type_qid: str, country_qid: str, division_qid: str, qid: s
     object_type, config = get_config_by_qid(type_qid)
     settings = get_wikidata_settings()
     osm_settings = get_osm_settings()
-    async with WikidataClient() as wikidata, OverpassClient(timeout=config.overpass.timeout) as overpass:
-        item = await wikidata.get_item(qid)
+    with WikidataClient() as wikidata, OverpassClient(timeout=config.overpass.timeout) as overpass:
+        item = wikidata.get_item(qid)
         try:
             matcher = get_matcher_type(config, wikidata, overpass)
             matches, osm_timestamp = await matcher.find_matches(item)

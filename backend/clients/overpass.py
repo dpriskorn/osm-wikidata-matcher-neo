@@ -41,6 +41,12 @@ class OverpassClient:
     def __init__(self, timeout: float = 10.0) -> None:
         self._client = httpx.AsyncClient(timeout=timeout)
 
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        pass
+
     async def __aenter__(self) -> Self:
         return self
 
