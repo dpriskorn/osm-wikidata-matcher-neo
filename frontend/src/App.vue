@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getWikidataLabel } from './api'
+import HealthBanner from './components/HealthBanner.vue'
 
 const route = useRoute()
 const typeLabel = ref<string | null>(null)
@@ -32,16 +33,19 @@ const pageTitle = computed(() => {
 </script>
 
 <template>
-  <div class="app container py-3">
-    <header class="d-flex justify-content-between align-items-center mb-4">
-      <h1 class="h4 mb-0">{{ pageTitle }}</h1>
-      <nav v-if="route.path !== '/'">
-        <router-link to="/" class="btn btn-outline-primary btn-sm">← Byt objekttyp</router-link>
-      </nav>
-    </header>
-    <main>
-      <router-view />
-    </main>
+  <div class="app">
+    <HealthBanner />
+    <div class="container py-3">
+      <header class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h4 mb-0">{{ pageTitle }}</h1>
+        <nav v-if="route.path !== '/'">
+          <router-link to="/" class="btn btn-outline-primary btn-sm">← Byt objekttyp</router-link>
+        </nav>
+      </header>
+      <main>
+        <router-view />
+      </main>
+    </div>
   </div>
 </template>
 
