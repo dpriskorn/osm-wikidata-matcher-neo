@@ -56,6 +56,7 @@ class MatchResponse(BaseModel):
     matches: list[MatchInfo]
     coord: WikidataCoordinates | None = None
     error: str | None = None
+    osm_timestamp: str | None = None
 
 
 class ConfirmRequest(BaseModel):
@@ -176,7 +177,7 @@ async def get_matches(type_qid: str, country_qid: str, division_qid: str, qid: s
         item = await wikidata.get_item(qid)
         try:
             matcher = get_matcher_type(config, wikidata, overpass)
-            matches = await matcher.find_matches(item)
+            matches, osm_timestamp = await matcher.find_matches(item)
             log.info(f"Returning {len(matches)} matches for {qid}")
             return MatchResponse(
                 qid=qid,
@@ -193,6 +194,7 @@ async def get_matches(type_qid: str, country_qid: str, division_qid: str, qid: s
                     for m in matches
                 ],
                 coord=item.coord,
+                osm_timestamp=osm_timestamp,
             )
         except OverpassError as e:
             log.error(f"Overpass error for {qid}: {e.message}")

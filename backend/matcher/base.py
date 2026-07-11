@@ -40,5 +40,5 @@ class Matcher(ABC, Generic[T]):
         return fuzz.token_sort_ratio(cleaned1, cleaned2) / 100.0
 
     @abstractmethod
-    async def find_matches(self, wikidata_item: T) -> list[MatchCandidate[T]]:
+    async def find_matches(self, wikidata_item: T) -> tuple[list[MatchCandidate[T]], str | None]:
         pass

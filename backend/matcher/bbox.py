@@ -26,10 +26,10 @@ class BBoxMatcher(Matcher[WikidataItem]):
         self.overpass = overpass_client
         self.radius_km = config.overpass.bbox_radius_km
 
-    async def find_matches(self, wikidata_item: WikidataItem) -> list[MatchCandidate[WikidataItem]]:
+    async def find_matches(self, wikidata_item: WikidataItem) -> tuple[list[MatchCandidate[WikidataItem]], str | None]:
         if not wikidata_item.coord:
             log.warning(f"BBoxMatcher: no coordinates for {wikidata_item.label}")
-            return []
+            return [], None
 
         bbox = self._coord_to_bbox(wikidata_item.coord.lat, wikidata_item.coord.lon)
         log.debug(f"BBoxMatcher: bbox={bbox} for {wikidata_item.label} at {wikidata_item.coord.lat},{wikidata_item.coord.lon}")
@@ -37,6 +37,7 @@ class BBoxMatcher(Matcher[WikidataItem]):
 
         raw_results = await self.overpass.query(query)
         osm_items = self.overpass.parse_results(raw_results)
+        osm_timestamp = raw_results.get("osm3s", {}).get("timestamp_osm_base")
 
         candidates = []
         for osm in osm_items:
@@ -54,7 +55,7 @@ class BBoxMatcher(Matcher[WikidataItem]):
         log.info(f"BBoxMatcher: found {len(candidates)} matches for {wikidata_item.label}")
         for c in candidates:
             log.debug(f"  - {c.osm_type}/{c.osm_id} '{c.osm_name}' similarity={c.similarity:.2f}")
-        return candidates
+        return candidates, osm_timestamp
 
     def _coord_to_bbox(self, lat: float, lon: float) -> str:
         km_per_deg_lat = 111.32

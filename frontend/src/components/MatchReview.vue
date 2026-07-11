@@ -84,6 +84,23 @@ function getSimilarityClass(sim: number): string {
   if (sim >= 0.5) return 'bg-warning'
   return 'bg-danger'
 }
+
+function formatRelativeTime(isoTimestamp: string): string {
+  const diff = Date.now() - new Date(isoTimestamp).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return "nyss"
+  if (mins < 60) return `${mins} minut${mins === 1 ? '' : 'er'} sedan`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours} timme${hours === 1 ? '' : 'r'} sedan`
+  const days = Math.floor(hours / 24)
+  return `${days} dag${days === 1 ? '' : 'ar'} sedan`
+}
+
+function isDataStale(isoTimestamp: string | null): boolean {
+  if (!isoTimestamp) return false
+  const diff = Date.now() - new Date(isoTimestamp).getTime()
+  return diff > 5 * 60 * 1000
+}
 </script>
 
 <template>
@@ -103,6 +120,17 @@ function getSimilarityClass(sim: number): string {
         <strong>Overpass timeout:</strong> {{ data.error }}
         <button @click="load" class="btn btn-sm btn-outline-warning ms-2">
           Försök igen
+        </button>
+      </div>
+
+      <div v-if="data?.osmTimestamp" class="mb-2">
+        <small class="text-muted">OSM-data: {{ formatRelativeTime(data.osmTimestamp) }}</small>
+      </div>
+
+      <div v-if="isDataStale(data?.osmTimestamp)" class="alert alert-warning" role="alert">
+        OSM-datan är mer än 5 minuter gammal, uppdatera sidan för färsk data
+        <button @click="load" class="btn btn-sm btn-outline-warning ms-2">
+          Uppdatera
         </button>
       </div>
 

@@ -47,6 +47,7 @@ export interface MatchResponse {
   matches: MatchInfo[]
   coord: { lat: number; lon: number } | null
   error: string | null
+  osm_timestamp: string | null
 }
 
 export async function getObjectTypes(): Promise<ObjectTypeInfo[]> {

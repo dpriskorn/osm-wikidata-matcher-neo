@@ -24,13 +24,14 @@ class NameMatcher(Matcher[WikidataItem]):
         self.wikidata = wikidata_client
         self.overpass = overpass_client
 
-    async def find_matches(self, wikidata_item: WikidataItem) -> list[MatchCandidate[WikidataItem]]:
+    async def find_matches(self, wikidata_item: WikidataItem) -> tuple[list[MatchCandidate[WikidataItem]], str | None]:
         bbox = self._get_bbox(wikidata_item)
         log.debug(f"NameMatcher: bbox={bbox} for item={wikidata_item.label}")
         query = self.config.overpass.query.replace("{{bbox}}", bbox)
 
         raw_results = await self.overpass.query(query)
         osm_items = self.overpass.parse_results(raw_results)
+        osm_timestamp = raw_results.get("osm3s", {}).get("timestamp_osm_base")
 
         candidates = []
         for osm in osm_items:
@@ -48,7 +49,7 @@ class NameMatcher(Matcher[WikidataItem]):
         log.info(f"NameMatcher: found {len(candidates)} matches for {wikidata_item.label}")
         for c in candidates:
             log.debug(f"  - {c.osm_type}/{c.osm_id} '{c.osm_name}' similarity={c.similarity:.2f}")
-        return candidates
+        return candidates, osm_timestamp
 
     def _get_bbox(self, item: WikidataItem) -> str:
         if self.config.overpass.country_bbox_map and item.country:
