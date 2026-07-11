@@ -9,7 +9,6 @@ wikidata:
       ?item wdt:P17 ?country .
       ?item wdt:P131 ?division .
       MINUS { ?item wdt:P402 [] }
-      SERVICE wikibase:label { bd:serviceParam wikibase:language "sv,en". }
     }
   label_property: itemLabel
   relation_property: P402

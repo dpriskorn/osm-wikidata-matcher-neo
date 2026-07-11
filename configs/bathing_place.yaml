@@ -12,7 +12,6 @@ wikidata:
       MINUS { ?item wdt:P10689 [] } # way
       MINUS { ?item wdt:P402 [] } # rel
       MINUS { ?item wdt:P11693 [] } # node
-      SERVICE wikibase:label { bd:serviceParam wikibase:language "sv,en". }
     }
   label_property: itemLabel
   coord_property: coord
@@ -32,7 +31,7 @@ overpass:
     );
     out body center;
   bbox_from_coord: true
-  bbox_radius_km: 1.0
+  bbox_radius_km: 0.5
   timeout: 10
 
 matching:

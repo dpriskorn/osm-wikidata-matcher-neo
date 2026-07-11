@@ -44,7 +44,7 @@ class OverpassQuery(BaseModel):
     query: str
     bbox_from_country: bool = False
     bbox_from_coord: bool = False
-    bbox_radius_km: float = 1.0
+    bbox_radius_km: float = 0.5
     country_bbox_map: Optional[dict[str, str]] = None
     fallback_bbox: Optional[str] = None
     timeout: float = 10.0

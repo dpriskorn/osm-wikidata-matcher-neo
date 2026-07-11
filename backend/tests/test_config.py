@@ -48,7 +48,7 @@ class TestObjectTypeConfig:
     def test_bathing_place_bbox_from_coord(self):
         config = get_config("bathing_place")
         assert config.overpass.bbox_from_coord is True
-        assert config.overpass.bbox_radius_km == 1.0
+        assert config.overpass.bbox_radius_km == 0.5
 
     def test_get_all_configs_returns_dict(self):
         configs = get_all_configs()
