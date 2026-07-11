@@ -22,14 +22,14 @@ overpass:
   query: |
     [out:json][timeout:25];
     (
-      node["leisure"="beach_access"]({{bbox}});
-      node["natural"="beach"]({{bbox}});
-      way["leisure"="beach_access"]({{bbox}});
-      way["natural"="beach"]({{bbox}});
+      nwr["leisure"="bathing_place"]({{bbox}});
+      nwr["natural"="beach"]({{bbox}});
+      nwr["sport"="swimming"]({{bbox}});
     );
     out body center;
   bbox_from_coord: true
   bbox_radius_km: 1.0
+  timeout: 10
 
 matching:
   method: bbox

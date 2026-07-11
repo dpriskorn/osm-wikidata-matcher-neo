@@ -27,6 +27,7 @@ overpass:
     wd:Q35: "58.5,4.5,70.5,31.5"   # Norway
     wd:Q37: "53.5,19.5,56.5,26.5"  # Lithuania (example)
   fallback_bbox: "55.5,10.5,69.5,24.5"
+  timeout: 10
 
 matching:
   method: name

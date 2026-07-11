@@ -26,6 +26,7 @@ class OsmSettings(BaseSettings):
     )
 
     zoom: int = 18
+    overpass_timeout: float = 10.0
 
 
 class WikidataConfig(BaseModel):
@@ -44,6 +45,7 @@ class OverpassQuery(BaseModel):
     bbox_radius_km: float = 1.0
     country_bbox_map: Optional[dict[str, str]] = None
     fallback_bbox: Optional[str] = None
+    timeout: float = 10.0
 
 
 class MatchingConfig(BaseModel):

@@ -172,7 +172,7 @@ async def get_matches(type_qid: str, country_qid: str, division_qid: str, qid: s
     object_type, config = get_config_by_qid(type_qid)
     settings = get_wikidata_settings()
     osm_settings = get_osm_settings()
-    async with WikidataClient(access_token=settings.access_token) as wikidata, OverpassClient() as overpass:
+    async with WikidataClient(access_token=settings.access_token) as wikidata, OverpassClient(timeout=config.overpass.timeout) as overpass:
         item = await wikidata.get_item(qid)
         try:
             matcher = get_matcher_type(config, wikidata, overpass)
