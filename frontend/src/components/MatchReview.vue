@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { getMatches, confirmMatch, type MatchResponse } from '../api'
+import L from 'leaflet'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   typeQid: string
@@ -16,10 +20,47 @@ const error = ref<string | null>(null)
 const data = ref<MatchResponse | null>(null)
 const confirming = ref(false)
 const statusMsg = ref<string | null>(null)
+const mapContainer = ref<HTMLDivElement | null>(null)
+let map: L.Map | null = null
 
 onMounted(async () => {
   await load()
 })
+
+watch(data, async () => {
+  await nextTick()
+  if (data.value?.coord && mapContainer.value && !map) {
+    initMap()
+  }
+})
+
+function initMap() {
+  if (!data.value?.coord || !mapContainer.value) return
+
+  const wdCoord = data.value.coord
+  map = L.map(mapContainer.value).setView([wdCoord.lat, wdCoord.lon], 16)
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map)
+
+  L.marker([wdCoord.lat, wdCoord.lon], {
+    icon: L.divIcon({ className: 'wd-marker', html: '📍', iconSize: [24, 24] })
+  }).addTo(map).bindPopup(`Wikidata: ${data.value?.label}`)
+
+  data.value.matches.forEach(m => {
+    if (m.lat && m.lon) {
+      const color = m.wikidata_match ? '#198754' : '#0d6efd'
+      L.circleMarker([m.lat, m.lon], {
+        radius: 8,
+        fillColor: color,
+        color: '#fff',
+        weight: 2,
+        fillOpacity: 0.8
+      }).addTo(map!).bindPopup(`OSM: ${m.osm_name || m.osm_type}/${m.osm_id}<br>${formatDistance(m.distance_m)}`)
+    }
+  })
+}
 
 async function load() {
   loading.value = true
@@ -28,7 +69,7 @@ async function load() {
   try {
     data.value = await getMatches(props.typeQid, props.countryQid, props.divisionQid, props.qid)
   } catch (e) {
-    error.value = 'Kunde inte ladda matcher'
+    error.value = t('matchReview.couldNotLoadMatches')
   } finally {
     loading.value = false
   }
@@ -39,10 +80,10 @@ async function handleConfirm(osmId: string, osmType: string, osmName: string) {
   statusMsg.value = null
   try {
     await confirmMatch(props.typeQid, props.countryQid, props.divisionQid, props.qid, osmId, osmType, osmName)
-    statusMsg.value = 'Matchning sparad!'
+    statusMsg.value = t('matchReview.saved')
     setTimeout(() => router.push(`/${props.typeQid}/${props.countryQid}/${props.divisionQid}`), 1500)
   } catch (e) {
-    error.value = 'Kunde inte spara matchning'
+    error.value = t('matchReview.couldNotSaveMatch')
   } finally {
     confirming.value = false
   }
@@ -73,18 +114,28 @@ function getSimilarityClass(sim: number): string {
 function formatRelativeTime(isoTimestamp: string): string {
   const diff = Date.now() - new Date(isoTimestamp).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "nyss"
-  if (mins < 60) return `${mins} minut${mins === 1 ? '' : 'er'} sedan`
+  if (mins < 1) return t('matchReview.justNow') || "just now"
+  if (mins < 60) return `${mins} min`
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours} timme${hours === 1 ? '' : 'r'} sedan`
+  if (hours < 24) return `${hours}h`
   const days = Math.floor(hours / 24)
-  return `${days} dag${days === 1 ? '' : 'ar'} sedan`
+  return `${days}d`
 }
 
 function isDataStale(isoTimestamp: string | null): boolean {
   if (!isoTimestamp) return false
   const diff = Date.now() - new Date(isoTimestamp).getTime()
   return diff > 5 * 60 * 1000
+}
+
+function formatDistance(meters: number | null): string {
+  if (meters === null) return '-'
+  if (meters < 1000) return `${Math.round(meters)} m`
+  return `${(meters / 1000).toFixed(1)} km`
+}
+
+function formatOsmTypeId(type: string, id: string): string {
+  return t('matchReview.osmTypeId', { type: type.toUpperCase(), id })
 }
 </script>
 
@@ -97,38 +148,38 @@ function isDataStale(isoTimestamp: string | null): boolean {
       </button>
     </div>
     <div class="card-body">
-      <p v-if="loading" class="text-muted">Laddar...</p>
+      <p v-if="loading" class="text-muted">{{ t('matchReview.loading') }}</p>
       <p v-if="error" class="text-danger">{{ error }}</p>
       <p v-if="statusMsg" class="text-success">{{ statusMsg }}</p>
 
       <div v-if="data?.error" class="alert alert-warning" role="alert">
-        <strong>Overpass timeout:</strong> {{ data.error }}
+        <strong>{{ t('matchReview.overpassTimeout', { error: data.error }) }}</strong>
         <button @click="load" class="btn btn-sm btn-outline-warning ms-2">
-          Försök igen
+          {{ t('matchReview.tryAgain') }}
         </button>
       </div>
 
       <div v-if="data?.osmTimestamp" class="mb-2">
-        <small class="text-muted">OSM-data: {{ formatRelativeTime(data.osmTimestamp) }}</small>
+        <small class="text-muted">{{ t('matchReview.osmDataAge', { age: formatRelativeTime(data.osmTimestamp) }) }}</small>
       </div>
 
       <div v-if="isDataStale(data?.osmTimestamp)" class="alert alert-warning" role="alert">
-        OSM-datan är mer än 5 minuter gammal, uppdatera sidan för färsk data
+        {{ t('matchReview.osmDataStale') }}
         <button @click="load" class="btn btn-sm btn-outline-warning ms-2">
-          Uppdatera
+          {{ t('matchReview.refresh') }}
         </button>
       </div>
 
       <div v-if="data && !data.error && data.matches.length === 0" class="text-center py-4">
-        <p class="text-muted mb-3">Inga OSM-kandidater hittades.</p>
+        <p class="text-muted mb-3">{{ t('matchReview.noMatchesFound') }}</p>
         <div v-if="data.coord" class="d-flex justify-content-center gap-2 mb-3">
           <a :href="getOsmViewUrl(data.coord.lat, data.coord.lon, 18)"
              target="_blank" class="btn btn-primary">
-            Visa i OSM ↗
+            {{ t('matchReview.viewInOSM') }}
           </a>
           <a :href="getOsmEditUrl(data.coord.lat, data.coord.lon, 18)"
              target="_blank" class="btn btn-success">
-            Skapa i OSM ↗
+            {{ t('matchReview.createInOSM') }}
           </a>
         </div>
       </div>
@@ -138,34 +189,47 @@ function isDataStale(isoTimestamp: string | null): boolean {
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start mb-2">
               <div>
-                <span class="badge bg-secondary me-2">{{ m.osm_type.toUpperCase() }}/{{ m.osm_id }}</span>
+                <span class="badge bg-secondary me-2">{{ formatOsmTypeId(m.osm_type, m.osm_id) }}</span>
+                <span v-if="m.wikidata_match" class="badge bg-info me-1">{{ t('matchReview.wikidataLinkExists') }}</span>
                 <span class="badge" :class="getSimilarityClass(m.similarity)">
-                  {{ Math.round(m.similarity * 100) }}%
+                  {{ t('matchReview.similarity', { percent: Math.round(m.similarity * 100) }) }}
+                </span>
+                <span v-if="m.distance_m !== null" class="badge bg-light text-dark ms-1">
+                  {{ t('matchReview.distance', { distance: formatDistance(m.distance_m) }) }}
                 </span>
               </div>
-              <span class="fw-bold">{{ m.osm_name }}</span>
+              <span class="fw-bold">{{ m.osm_name || t('matchReview.noName') }}</span>
             </div>
             <div class="d-flex gap-2">
               <a :href="getEditUrl(m.osm_type, m.osm_id, m.zoom)"
                  target="_blank" class="btn btn-outline-primary btn-sm">
-                Redigera i OSM ↗
+                {{ t('matchReview.editInOSM') }}
               </a>
               <button
                 @click="handleConfirm(m.osm_id, m.osm_type, m.osm_name)"
                 :disabled="confirming"
                 class="btn btn-success btn-sm"
               >
-                {{ confirming ? 'Sparar...' : 'Bekräfta' }}
+                {{ confirming ? t('matchReview.saving') : t('matchReview.uploadOsmIdToWikidata') }}
               </button>
             </div>
           </div>
         </li>
       </ul>
+
+      <div v-if="data?.coord" ref="mapContainer" id="match-map" class="mt-3" style="height: 400px; border-radius: 8px;"></div>
     </div>
     <div class="card-footer">
       <button @click="router.push(`/${typeQid}/${countryQid}/${divisionQid}`)" class="btn btn-sm btn-outline-secondary">
-        ← Tillbaka till lista
+        {{ t('matchReview.backToList') }}
       </button>
     </div>
   </div>
 </template>
+
+<style>
+.wd-marker {
+  background: none;
+  border: none;
+}
+</style>

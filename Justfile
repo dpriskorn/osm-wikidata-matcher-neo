@@ -11,7 +11,7 @@ fe-lint:
     cd frontend && npx vue-tsc --noEmit
 
 be-test:
-    cd backend && poetry run pytest -v
+    cd backend && poetry run pytest --cov=. --cov-report=term-missing -v -x
 
 be-test-coverage:
     cd backend && poetry run pytest --cov=backend --cov-report=term-missing --cov-report=html

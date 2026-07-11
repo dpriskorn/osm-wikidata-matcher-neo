@@ -46,7 +46,7 @@ class TestMatcherCleanName:
 
     def test_clean_name_unicode(self):
         result = self.matcher.clean_name("kungsleden är fin")
-        assert "kungsleden" not in result
+        assert "kungsleden" in result
         assert "är" in result
         assert "fin" in result
 

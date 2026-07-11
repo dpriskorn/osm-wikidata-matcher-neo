@@ -14,7 +14,7 @@ class TestObjectTypeConfig:
         config = get_config("hiking_trail")
         assert config.object_type == "hiking_trail"
         assert config.label == "Vandringsleder"
-        assert config.wikidata.update_property == "P402"
+        assert config.wikidata.relation_property == "P402"
         assert config.matching.method == "name"
         assert config.matching.similarity_threshold == 0.3
 
@@ -22,7 +22,9 @@ class TestObjectTypeConfig:
         config = get_config("bathing_place")
         assert config.object_type == "bathing_place"
         assert config.label == "Badplatser"
-        assert config.wikidata.update_property == "P402"
+        assert config.wikidata.node_property == "P11693"
+        assert config.wikidata.way_property == "P10689"
+        assert config.wikidata.relation_property == "P402"
         assert config.matching.method == "bbox"
         assert config.matching.similarity_threshold == 0.25
 
@@ -66,9 +68,9 @@ class TestWikidataConfig:
         assert "SELECT" in config.wikidata.sparql_query
         assert "wdt:P31" in config.wikidata.sparql_query
 
-    def test_update_properties(self):
+    def test_hiking_trail_relation_property(self):
         config = get_config("hiking_trail")
-        assert config.wikidata.update_property == "P402"
+        assert config.wikidata.relation_property == "P402"
         assert config.wikidata.not_found_property == "P9660"
         assert config.wikidata.not_found_qualifier == "P5017"
 

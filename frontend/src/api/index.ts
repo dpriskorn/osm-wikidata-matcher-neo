@@ -39,6 +39,11 @@ export interface MatchInfo {
   similarity: number
   osm_url: string
   zoom: number
+  wikidata_match: boolean
+  lat: number | null
+  lon: number | null
+  distance_m: number | null
+  property_id: string | null
 }
 
 export interface MatchResponse {
@@ -103,9 +108,22 @@ export async function rejectMatch(
   })
 }
 
-export async function getWikidataLabel(qid: string): Promise<string> {
-  const lang = navigator.language.split('-')[0] || 'en'
+export async function getWikidataLabel(qid: string, lang: string = 'en'): Promise<string> {
   const { data } = await axios.get(`https://www.wikidata.org/wiki/Special:EntityData/${qid}.json`)
   const entity = data.entities?.[qid]
   return entity?.labels?.[lang]?.value || entity?.labels?.en?.value || qid
+}
+
+export interface AuthStatus {
+  logged_in: boolean
+  username: string | null
+}
+
+export async function getAuthStatus(): Promise<AuthStatus> {
+  const { data } = await api.get('/auth/status')
+  return data
+}
+
+export async function logoutAuth(): Promise<void> {
+  await api.post('/auth/logout')
 }

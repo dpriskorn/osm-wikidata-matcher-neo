@@ -42,14 +42,19 @@ class BBoxMatcher(Matcher[WikidataItem]):
         candidates = []
         for osm in osm_items:
             sim = self.similarity(wikidata_item.label, osm.name)
-            if sim >= self.threshold:
-                candidates.append(MatchCandidate(
-                    item=wikidata_item,
-                    similarity=sim,
-                    osm_id=osm.osm_id,
-                    osm_type=osm.osm_type,
-                    osm_name=osm.name,
-                ))
+            wikidata_match = osm.wikidata_tag == wikidata_item.qid
+            if wikidata_match:
+                sim = 1.0
+            candidates.append(MatchCandidate(
+                item=wikidata_item,
+                similarity=sim,
+                osm_id=osm.osm_id,
+                osm_type=osm.osm_type,
+                osm_name=osm.name,
+                wikidata_match=wikidata_match,
+                lat=osm.lat,
+                lon=osm.lon,
+            ))
 
         candidates.sort(key=lambda c: c.similarity, reverse=True)
         log.info(f"BBoxMatcher: found {len(candidates)} matches for {wikidata_item.label}")

@@ -13,6 +13,9 @@ class MatchCandidate(BaseModel, Generic[T]):
     osm_id: str
     osm_type: str
     osm_name: str
+    wikidata_match: bool = False
+    lat: float | None = None
+    lon: float | None = None
 
     @property
     def osm_url(self) -> str:

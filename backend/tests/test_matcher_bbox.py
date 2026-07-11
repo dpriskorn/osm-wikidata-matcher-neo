@@ -51,11 +51,12 @@ class TestBBoxMatcherCoordToBbox:
 
 
 class TestBBoxMatcherFindMatches:
-    def test_find_matches_no_coord_returns_empty(self):
+    @pytest.mark.asyncio
+    async def test_find_matches_no_coord_returns_empty(self):
         config = get_config("bathing_place")
         from backend.clients.wikidata import WikidataItem
         matcher = BBoxMatcher(config, None, None)
         item = WikidataItem(qid="Q1", label="No Coord", coord=None)
-        import asyncio
-        result = asyncio.get_event_loop().run_until_complete(matcher.find_matches(item))
-        assert result == []
+        matches, timestamp = await matcher.find_matches(item)
+        assert matches == []
+        assert timestamp is None

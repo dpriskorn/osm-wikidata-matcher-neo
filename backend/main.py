@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 logging.basicConfig(
@@ -15,6 +15,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 from routers import matcher
+from routers.auth import router as auth_router
 
 
 app = FastAPI(title="Wikidata-OSM Matcher", version="0.1.0")
@@ -28,6 +29,12 @@ app.add_middleware(
 )
 
 app.include_router(matcher.router)
+app.include_router(auth_router)
+
+
+@app.exception_handler(ValueError)
+async def value_error_handler(request, exc):
+    raise HTTPException(status_code=500, detail=str(exc))
 
 
 @app.get("/health")

@@ -32,7 +32,10 @@ class OsmSettings(BaseSettings):
 class WikidataConfig(BaseModel):
     sparql_query: str
     label_property: str
-    update_property: str
+    node_property: Optional[str] = None
+    way_property: Optional[str] = None
+    relation_property: Optional[str] = None
+    update_property: Optional[str] = None
     not_found_property: str
     not_found_qualifier: Optional[str] = None
     coord_property: Optional[str] = None

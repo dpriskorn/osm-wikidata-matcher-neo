@@ -1,0 +1,56 @@
+{
+  "app": {
+    "title": "Wikidata-OSM Matcher",
+    "changeObjectType": "Byt objekttyp"
+  },
+  "auth": {
+    "notLoggedIn": "Inte inloggad",
+    "loggedInAs": "Inloggad som: {username}",
+    "refresh": "Uppdatera",
+    "loginWithWikimediaOAuth": "Logga in med Wikimedia OAuth"
+  },
+  "health": {
+    "backendDown": "Backend är nere"
+  },
+  "matchReview": {
+    "loading": "Laddar...",
+    "error": "Fel",
+    "saved": "Matchning sparad!",
+    "couldNotLoadMatches": "Kunde inte ladda matcher",
+    "couldNotSaveMatch": "Kunde inte spara matchning",
+    "overpassTimeout": "Overpass timeout: {error}",
+    "tryAgain": "Försök igen",
+    "osmDataAge": "OSM-data: {age}",
+    "osmDataStale": "OSM-datan är mer än 5 minuter gammal, uppdatera sidan för färsk data",
+    "justNow": "nyss",
+    "refresh": "Uppdatera",
+    "noMatchesFound": "Inga OSM-kandidater hittades.",
+    "viewInOSM": "Visa i OSM ↗",
+    "createInOSM": "Skapa i OSM ↗",
+    "osmTypeId": "{type}/{id}",
+    "wikidataLinkExists": "✓ Wikidata-länk finns i OSM",
+    "similarity": "{percent}%",
+    "distance": "{distance}",
+    "noName": "(ingen namn)",
+    "editInOSM": "Redigera i OSM ↗",
+    "uploadOsmIdToWikidata": "Ladda upp OSM ID till Wikidata",
+    "saving": "Sparar...",
+    "backToList": "← Tillbaka till lista"
+  },
+  "candidateList": {
+    "loading": "Laddar...",
+    "error": "Fel vid laddning av kandidater"
+  },
+  "objectType": {
+    "bathingPlace": "Badplatser",
+    "hikingTrail": "Vandringsleder"
+  },
+  "divisions": {
+    "loading": "Laddar...",
+    "error": "Fel vid laddning av divisioner"
+  },
+  "countries": {
+    "loading": "Laddar...",
+    "error": "Fel vid laddning av länder"
+  }
+}

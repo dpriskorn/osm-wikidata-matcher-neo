@@ -1,16 +1,20 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getWikidataLabel } from './api'
+import { useI18n } from 'vue-i18n'
+import { getWikidataLabel, getAuthStatus, type AuthStatus } from './api'
+import { availableLocales } from './i18n'
 import HealthBanner from './components/HealthBanner.vue'
 
+const { t, locale } = useI18n()
 const route = useRoute()
 const typeLabel = ref<string | null>(null)
+const authStatus = ref<AuthStatus>({ logged_in: false, username: null })
 
 async function fetchTypeLabel() {
   if (route.params.typeQid) {
     try {
-      typeLabel.value = await getWikidataLabel(route.params.typeQid as string)
+      typeLabel.value = await getWikidataLabel(route.params.typeQid as string, locale.value)
     } catch {
       typeLabel.value = null
     }
@@ -19,29 +23,84 @@ async function fetchTypeLabel() {
   }
 }
 
+async function fetchAuthStatus() {
+  try {
+    authStatus.value = await getAuthStatus()
+  } catch {
+    authStatus.value = { logged_in: false, username: null }
+  }
+}
+
+function changeLocale(code: string) {
+  locale.value = code
+  localStorage.setItem('locale', code)
+  fetchTypeLabel()
+}
+
 watch(() => route.params.typeQid, fetchTypeLabel, { immediate: true })
+watch(locale, fetchTypeLabel)
 
 const pageTitle = computed(() => {
-  if (route.path === '/') return 'Wikidata-OSM Matcher'
+  if (route.path === '/') return t('app.title')
   if (route.params.typeQid) {
     const qid = route.params.typeQid
-    if (typeLabel.value) return `Typ: ${typeLabel.value} (${qid})`
-    return `Typ: ${qid}`
+    if (typeLabel.value) return `${typeLabel.value} (${qid})`
+    return qid
   }
-  return 'Wikidata-OSM Matcher'
+  return t('app.title')
+})
+
+onMounted(() => {
+  const saved = localStorage.getItem('locale')
+  if (saved && availableLocales.some(l => l.code === saved)) {
+    locale.value = saved
+  }
+  fetchAuthStatus()
 })
 </script>
 
 <template>
   <div class="app">
     <HealthBanner />
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
+      <div class="container">
+        <span class="navbar-brand mb-0 h1">{{ t('app.title') }}</span>
+        <div class="d-flex align-items-center">
+          <router-link v-if="route.path !== '/'" to="/" class="btn btn-outline-primary btn-sm me-2">
+            {{ t('app.changeObjectType') }}
+          </router-link>
+          <div class="dropdown me-2">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+              {{ availableLocales.find(l => l.code === locale)?.name || locale }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li v-for="loc in availableLocales" :key="loc.code">
+                <button class="dropdown-item" :class="{ active: locale === loc.code }" @click="changeLocale(loc.code)">
+                  {{ loc.name }}
+                </button>
+              </li>
+            </ul>
+          </div>
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+              {{ authStatus.logged_in ? authStatus.username : t('auth.notLoggedIn') }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li v-if="authStatus.logged_in">
+                <span class="dropdown-item-text">{{ t('auth.loggedInAs', { username: authStatus.username }) }}</span>
+              </li>
+              <li v-if="authStatus.logged_in">
+                <button class="dropdown-item" @click="fetchAuthStatus">{{ t('auth.refresh') }}</button>
+              </li>
+              <li v-else>
+                <button class="dropdown-item disabled">{{ t('auth.loginWithWikimediaOAuth') }}</button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
     <div class="container py-3">
-      <header class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h4 mb-0">{{ pageTitle }}</h1>
-        <nav v-if="route.path !== '/'">
-          <router-link to="/" class="btn btn-outline-primary btn-sm">← Byt objekttyp</router-link>
-        </nav>
-      </header>
       <main>
         <router-view />
       </main>

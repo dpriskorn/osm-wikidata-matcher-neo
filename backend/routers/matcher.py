@@ -1,4 +1,5 @@
 import logging
+import math
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -11,6 +12,25 @@ from config import get_config, get_all_configs, get_config_by_qid, get_wikidata_
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["matcher"])
+
+
+def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    R = 6371000
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = math.sin(dphi/2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda/2)**2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+
+def get_property_for_osm_type(config: ObjectTypeConfig, osm_type: str) -> str | None:
+    if osm_type == "node":
+        return config.wikidata.node_property
+    elif osm_type == "way":
+        return config.wikidata.way_property
+    elif osm_type == "relation":
+        return config.wikidata.relation_property
+    return config.wikidata.update_property
 
 
 class ObjectTypeInfo(BaseModel):
@@ -48,6 +68,11 @@ class MatchInfo(BaseModel):
     similarity: float
     osm_url: str
     zoom: int
+    wikidata_match: bool = False
+    lat: float | None = None
+    lon: float | None = None
+    distance_m: float | None = None
+    property_id: str | None = None
 
 
 class MatchResponse(BaseModel):
@@ -190,6 +215,11 @@ async def get_matches(type_qid: str, country_qid: str, division_qid: str, qid: s
                         similarity=m.similarity,
                         osm_url=m.osm_url,
                         zoom=osm_settings.zoom,
+                        wikidata_match=m.wikidata_match,
+                        lat=m.lat,
+                        lon=m.lon,
+                        distance_m=round(haversine_distance(item.coord.lat, item.coord.lon, m.lat, m.lon)) if item.coord and m.lat and m.lon else None,
+                        property_id=get_property_for_osm_type(config, m.osm_type),
                     )
                     for m in matches
                 ],
@@ -211,10 +241,16 @@ async def get_matches(type_qid: str, country_qid: str, division_qid: str, qid: s
 async def confirm_match(type_qid: str, country_qid: str, division_qid: str, qid: str, request: ConfirmRequest):
     object_type, config = get_config_by_qid(type_qid)
     settings = get_wikidata_settings()
+    prop = config.wikidata.node_property if request.osm_type == "node" else \
+           config.wikidata.way_property if request.osm_type == "way" else \
+           config.wikidata.relation_property if request.osm_type == "relation" else \
+           config.wikidata.update_property
+    if not prop:
+        raise HTTPException(status_code=500, detail=f"No property configured for OSM type: {request.osm_type}")
     async with WikidataClient(access_token=settings.access_token) as wikidata:
         success = await wikidata.update_property(
             qid=qid,
-            property_id=config.wikidata.update_property,
+            property_id=prop,
             value=request.osm_id,
         )
     if not success:

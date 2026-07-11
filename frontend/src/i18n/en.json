@@ -1,0 +1,56 @@
+{
+  "app": {
+    "title": "Wikidata-OSM Matcher",
+    "changeObjectType": "Change object type"
+  },
+  "auth": {
+    "notLoggedIn": "Not logged in",
+    "loggedInAs": "Logged in as: {username}",
+    "refresh": "Refresh",
+    "loginWithWikimediaOAuth": "Login with Wikimedia OAuth"
+  },
+  "health": {
+    "backendDown": "Backend is down"
+  },
+  "matchReview": {
+    "loading": "Loading...",
+    "error": "Error",
+    "saved": "Match saved!",
+    "couldNotLoadMatches": "Could not load matches",
+    "couldNotSaveMatch": "Could not save match",
+    "overpassTimeout": "Overpass timeout: {error}",
+    "tryAgain": "Try again",
+    "osmDataAge": "OSM data: {age}",
+    "osmDataStale": "OSM data is more than 5 minutes old, refresh for fresh data",
+    "justNow": "just now",
+    "refresh": "Refresh",
+    "noMatchesFound": "No OSM candidates found.",
+    "viewInOSM": "View in OSM ↗",
+    "createInOSM": "Create in OSM ↗",
+    "osmTypeId": "{type}/{id}",
+    "wikidataLinkExists": "✓ Wikidata link exists in OSM",
+    "similarity": "{percent}%",
+    "distance": "{distance}",
+    "noName": "(no name)",
+    "editInOSM": "Edit in OSM ↗",
+    "uploadOsmIdToWikidata": "Upload OSM ID to Wikidata",
+    "saving": "Saving...",
+    "backToList": "← Back to list"
+  },
+  "candidateList": {
+    "loading": "Loading...",
+    "error": "Error loading candidates"
+  },
+  "objectType": {
+    "bathingPlace": "Bathing places",
+    "hikingTrail": "Hiking trails"
+  },
+  "divisions": {
+    "loading": "Loading...",
+    "error": "Error loading divisions"
+  },
+  "countries": {
+    "loading": "Loading...",
+    "error": "Error loading countries"
+  }
+}

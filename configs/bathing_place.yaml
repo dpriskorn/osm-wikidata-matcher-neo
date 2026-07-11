@@ -9,18 +9,22 @@ wikidata:
       ?item wdt:P625 ?coord .
       ?item wdt:P17 ?country .
       ?item wdt:P131 ?division .
-      MINUS { ?item wdt:P402 [] }
+      MINUS { ?item wdt:P10689 [] } # way
+      MINUS { ?item wdt:P402 [] } # rel
+      MINUS { ?item wdt:P11693 [] } # node
       SERVICE wikibase:label { bd:serviceParam wikibase:language "sv,en". }
     }
   label_property: itemLabel
   coord_property: coord
-  update_property: P402
+  node_property: P11693
+  way_property: P10689
+  relation_property: P402
   not_found_property: P9660
   not_found_qualifier: P5017
 
 overpass:
   query: |
-    [out:json][timeout:25];
+    [out:json][timeout:10];
     (
       nwr["leisure"="bathing_place"]({{bbox}});
       nwr["natural"="beach"]({{bbox}});

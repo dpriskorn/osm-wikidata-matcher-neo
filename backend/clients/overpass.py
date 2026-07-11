@@ -32,6 +32,7 @@ class OverpassResult(BaseModel):
     osm_id: str
     osm_type: str
     name: str
+    wikidata_tag: str | None = None
     lat: float | None = None
     lon: float | None = None
 
@@ -99,12 +100,14 @@ class OverpassClient:
             lon = el.get("lon") or el.get("center", {}).get("lon")
 
             name = tags.get("name", "") or tags.get("name:sv", "") or ""
+            wikidata_tag = tags.get("wikidata")
 
             if osm_type in ("node", "way", "relation"):
                 results.append(OverpassResult(
                     osm_id=osm_id,
                     osm_type=osm_type,
                     name=name,
+                    wikidata_tag=wikidata_tag,
                     lat=lat,
                     lon=lon,
                 ))

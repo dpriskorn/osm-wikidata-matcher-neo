@@ -41,12 +41,12 @@ class TestGetCandidates:
         mock_client.parse_sparql_result = MagicMock(return_value=[])
 
         with patch("backend.routers.matcher.WikidataClient", return_value=mock_client):
-            response = client.get("/api/types/hiking_trail/candidates")
+            response = client.get("/api/types/Q2143825/countries/Q34/divisions/Q504994/candidates")
             assert response.status_code == 200
 
     @patch("backend.routers.matcher.WikidataClient")
     def test_get_candidates_unknown_type(self, mock_client_class):
-        response = client.get("/api/types/nonexistent/candidates")
+        response = client.get("/api/types/nonexistent/countries/Q34/divisions/Q504994/candidates")
         assert response.status_code == 500
 
 
@@ -67,7 +67,7 @@ class TestGetMatches:
 
         with patch("backend.routers.matcher.WikidataClient", return_value=mock_wd):
             with patch("backend.routers.matcher.OverpassClient", return_value=mock_op):
-                response = client.get("/api/types/hiking_trail/candidates/Q123/matches")
+                response = client.get("/api/types/Q2143825/countries/Q34/divisions/Q504994/candidates/Q123/matches")
                 assert response.status_code == 200
                 data = response.json()
                 assert data["qid"] == "Q123"
@@ -75,7 +75,7 @@ class TestGetMatches:
 
     @patch("backend.routers.matcher.WikidataClient")
     def test_get_matches_unknown_type(self, mock_client_class):
-        response = client.get("/api/types/nonexistent/candidates/Q123/matches")
+        response = client.get("/api/types/nonexistent/countries/Q34/divisions/Q504994/candidates/Q123/matches")
         assert response.status_code == 500
 
 
@@ -87,7 +87,7 @@ class TestConfirmMatch:
 
         with patch("backend.routers.matcher.WikidataClient", return_value=mock_client):
             response = client.post(
-                "/api/types/hiking_trail/candidates/Q123/confirm",
+                "/api/types/Q2143825/countries/Q34/divisions/Q504994/candidates/Q123/confirm",
                 json={"osm_id": "456", "osm_type": "relation", "osm_name": "Test"},
             )
             assert response.status_code == 200
@@ -100,7 +100,7 @@ class TestConfirmMatch:
 
         with patch("backend.routers.matcher.WikidataClient", return_value=mock_client):
             response = client.post(
-                "/api/types/hiking_trail/candidates/Q123/confirm",
+                "/api/types/Q2143825/countries/Q34/divisions/Q504994/candidates/Q123/confirm",
                 json={"osm_id": "456", "osm_type": "relation", "osm_name": "Test"},
             )
             assert response.status_code == 500
@@ -114,7 +114,7 @@ class TestRejectMatch:
 
         with patch("backend.routers.matcher.WikidataClient", return_value=mock_client):
             response = client.post(
-                "/api/types/hiking_trail/candidates/Q123/reject",
+                "/api/types/Q2143825/countries/Q34/divisions/Q504994/candidates/Q123/reject",
                 json={"reason": None},
             )
             assert response.status_code == 200
@@ -127,7 +127,7 @@ class TestRejectMatch:
 
         with patch("backend.routers.matcher.WikidataClient", return_value=mock_client):
             response = client.post(
-                "/api/types/hiking_trail/candidates/Q123/reject",
+                "/api/types/Q2143825/countries/Q34/divisions/Q504994/candidates/Q123/reject",
                 json={"reason": None},
             )
             assert response.status_code == 500
