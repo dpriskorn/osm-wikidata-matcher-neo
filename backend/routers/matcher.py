@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from clients.wikidata import WikidataClient, WikidataItem, WikidataCoordinates
-from clients.overpass import OverpassClient
+from clients.overpass import OverpassClient, OverpassError
 from matcher import NameMatcher, BBoxMatcher
 from config import get_config, get_all_configs, get_config_by_qid, get_wikidata_settings, get_osm_settings
 
@@ -55,6 +55,7 @@ class MatchResponse(BaseModel):
     label: str
     matches: list[MatchInfo]
     coord: WikidataCoordinates | None = None
+    error: str | None = None
 
 
 class ConfirmRequest(BaseModel):
@@ -173,25 +174,35 @@ async def get_matches(type_qid: str, country_qid: str, division_qid: str, qid: s
     osm_settings = get_osm_settings()
     async with WikidataClient(access_token=settings.access_token) as wikidata, OverpassClient() as overpass:
         item = await wikidata.get_item(qid)
-        matcher = get_matcher_type(config, wikidata, overpass)
-        matches = await matcher.find_matches(item)
-        log.info(f"Returning {len(matches)} matches for {qid}")
-        return MatchResponse(
-            qid=qid,
-            label=item.label,
-            matches=[
-                MatchInfo(
-                    osm_id=m.osm_id,
-                    osm_type=m.osm_type,
-                    osm_name=m.osm_name,
-                    similarity=m.similarity,
-                    osm_url=m.osm_url,
-                    zoom=osm_settings.zoom,
-                )
-                for m in matches
-            ],
-            coord=item.coord,
-        )
+        try:
+            matcher = get_matcher_type(config, wikidata, overpass)
+            matches = await matcher.find_matches(item)
+            log.info(f"Returning {len(matches)} matches for {qid}")
+            return MatchResponse(
+                qid=qid,
+                label=item.label,
+                matches=[
+                    MatchInfo(
+                        osm_id=m.osm_id,
+                        osm_type=m.osm_type,
+                        osm_name=m.osm_name,
+                        similarity=m.similarity,
+                        osm_url=m.osm_url,
+                        zoom=osm_settings.zoom,
+                    )
+                    for m in matches
+                ],
+                coord=item.coord,
+            )
+        except OverpassError as e:
+            log.error(f"Overpass error for {qid}: {e.message}")
+            return MatchResponse(
+                qid=qid,
+                label=item.label,
+                matches=[],
+                coord=item.coord,
+                error=e.message,
+            )
 
 
 @router.post("/types/{type_qid}/countries/{country_qid}/divisions/{division_qid}/candidates/{qid}/confirm")

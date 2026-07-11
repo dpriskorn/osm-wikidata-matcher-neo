@@ -46,6 +46,7 @@ export interface MatchResponse {
   label: string
   matches: MatchInfo[]
   coord: { lat: number; lon: number } | null
+  error: string | null
 }
 
 export async function getObjectTypes(): Promise<ObjectTypeInfo[]> {

@@ -99,7 +99,14 @@ function getSimilarityClass(sim: number): string {
       <p v-if="error" class="text-danger">{{ error }}</p>
       <p v-if="statusMsg" class="text-success">{{ statusMsg }}</p>
 
-      <div v-if="data && data.matches.length === 0" class="text-center py-4">
+      <div v-if="data?.error" class="alert alert-warning" role="alert">
+        <strong>Overpass timeout:</strong> {{ data.error }}
+        <button @click="load" class="btn btn-sm btn-outline-warning ms-2">
+          Försök igen
+        </button>
+      </div>
+
+      <div v-if="data && !data.error && data.matches.length === 0" class="text-center py-4">
         <p class="text-muted mb-3">Inga OSM-kandidater hittades.</p>
         <div v-if="data.coord" class="d-flex justify-content-center gap-2 mb-3">
           <a :href="getOsmViewUrl(data.coord.lat, data.coord.lon, 18)"
@@ -120,7 +127,7 @@ function getSimilarityClass(sim: number): string {
         </button>
       </div>
 
-      <ul v-if="data && data.matches.length" class="list-unstyled">
+      <ul v-if="data && !data.error && data.matches.length" class="list-unstyled">
         <li v-for="m in data.matches" :key="m.osm_id" class="card mb-3">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start mb-2">
@@ -149,7 +156,7 @@ function getSimilarityClass(sim: number): string {
         </li>
       </ul>
 
-      <div v-if="data && data.matches.length > 1" class="mt-3 pt-3 border-top">
+      <div v-if="data && !data.error && data.matches.length > 1" class="mt-3 pt-3 border-top">
         <button
           @click="handleReject"
           :disabled="rejecting"

@@ -7,9 +7,21 @@ from pydantic import BaseModel
 log = logging.getLogger(__name__)
 
 USER_AGENT = "osm-wikidata-matcher-neo 1.0 (https://github.com/anomalyco/opencode)"
-OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"
+
+OVERPASS_MIRRORS = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://z.overpass-api.de/api/interpreter",
+]
 
 HEADERS = {"User-Agent": USER_AGENT}
+
+
+class OverpassError(Exception):
+    def __init__(self, message: str, last_url: str):
+        super().__init__(message)
+        self.message = message
+        self.last_url = last_url
 
 
 class OverpassResult(BaseModel):
@@ -22,7 +34,7 @@ class OverpassResult(BaseModel):
 
 class OverpassClient:
     def __init__(self) -> None:
-        self._client = httpx.AsyncClient(timeout=60.0)
+        self._client = httpx.AsyncClient(timeout=120.0)
 
     async def __aenter__(self) -> Self:
         return self
@@ -32,13 +44,38 @@ class OverpassClient:
 
     async def query(self, overpass_query: str) -> dict[str, Any]:
         log.debug(f"Overpass QL query:\n{overpass_query}")
-        response = await self._client.post(
-            OVERPASS_API_URL,
-            data={"data": overpass_query},
-            headers=HEADERS,
-        )
-        response.raise_for_status()
-        return response.json()
+        last_error = None
+        for url in OVERPASS_MIRRORS:
+            try:
+                log.info(f"Trying Overpass mirror: {url}")
+                response = await self._client.post(
+                    url,
+                    data={"data": overpass_query},
+                    headers=HEADERS,
+                )
+                if response.status_code == 504:
+                    log.warning(f"Overpass mirror {url} returned 504 Gateway Timeout")
+                    continue
+                response.raise_for_status()
+                return response.json()
+            except httpx.HTTPStatusError as e:
+                last_error = e
+                log.warning(f"Overpass mirror {url} failed: {e.response.status_code}")
+                continue
+            except httpx.TimeoutException:
+                log.warning(f"Overpass mirror {url} timed out")
+                continue
+
+        error_msg = f"All Overpass mirrors failed. Last error: {last_error}"
+        if last_error:
+            try:
+                error_data = last_error.response.json()
+                if "error" in error_data:
+                    error_msg = f"Overpass API error: {error_data['error']}"
+            except Exception:
+                pass
+        log.error(error_msg)
+        raise OverpassError(error_msg, OVERPASS_MIRRORS[-1])
 
     def parse_results(self, data: dict[str, Any]) -> list[OverpassResult]:
         elements = data.get("elements", [])
