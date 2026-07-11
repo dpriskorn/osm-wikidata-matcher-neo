@@ -18,6 +18,7 @@ class MatchCandidate(BaseModel, Generic[T]):
     lon: float | None = None
     tags: dict[str, str] = {}
     needs_investigation: bool = False
+    distance_m: float | None = None
 
     @property
     def osm_url(self) -> str:
