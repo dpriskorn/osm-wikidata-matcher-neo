@@ -35,7 +35,8 @@
     "editInOSM": "Edit in OSM ↗",
     "uploadOsmIdToWikidata": "Upload OSM ID to Wikidata",
     "saving": "Saving...",
-    "backToList": "← Back to list"
+    "backToList": "← Back to list",
+    "needsInvestigation": "Needs investigation"
   },
   "candidateList": {
     "loading": "Loading...",

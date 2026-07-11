@@ -35,7 +35,8 @@
     "editInOSM": "Redigera i OSM ↗",
     "uploadOsmIdToWikidata": "Ladda upp OSM ID till Wikidata",
     "saving": "Sparar...",
-    "backToList": "← Tillbaka till lista"
+    "backToList": "← Tillbaka till lista",
+    "needsInvestigation": "Behöver undersökas"
   },
   "candidateList": {
     "loading": "Laddar...",

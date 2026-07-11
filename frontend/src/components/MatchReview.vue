@@ -199,19 +199,20 @@ function filteredTags(tags: Record<string, string>): Record<string, string> {
         <li v-for="m in data.matches" :key="m.osm_id" class="card mb-3">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start mb-2">
-              <div>
-                <span class="badge bg-secondary me-2">{{ formatOsmTypeId(m.osm_type, m.osm_id) }}</span>
-                <span v-if="m.wikidata_match" class="badge bg-info me-1">{{ t('matchReview.wikidataLinkExists') }}</span>
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span class="badge bg-secondary">{{ formatOsmTypeId(m.osm_type, m.osm_id) }}</span>
+                <span v-if="m.wikidata_match" class="badge bg-info">{{ t('matchReview.wikidataLinkExists') }}</span>
                 <span class="badge" :class="getSimilarityClass(m.similarity)">
                   {{ t('matchReview.similarity', { percent: Math.round(m.similarity * 100) }) }}
                 </span>
-                <span v-if="m.distance_m !== null" class="badge bg-light text-dark ms-1">
+                <span v-if="m.distance_m !== null" class="badge bg-light text-dark">
                   {{ t('matchReview.distance', { distance: formatDistance(m.distance_m) }) }}
                 </span>
+                <span v-if="m.needs_investigation" class="badge bg-warning">{{ t('matchReview.needsInvestigation') }}</span>
               </div>
               <span class="fw-bold">{{ m.osm_name || t('matchReview.noName') }}</span>
             </div>
-            <div v-if="Object.keys(m.tags).length > 2" class="mb-2">
+            <div v-if="Object.keys(filteredTags(m.tags)).length > 0" class="mb-2">
               <small class="text-muted">
                 <span v-for="(value, key) in filteredTags(m.tags)" :key="key" class="me-2">
                   <code>{{ key }}={{ value }}</code>
