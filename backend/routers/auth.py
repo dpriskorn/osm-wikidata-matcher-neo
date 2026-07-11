@@ -24,13 +24,18 @@ def load_tokens() -> dict:
     if not TOKENS_FILE.exists():
         return {}
     tokens = {}
-    content = TOKENS_FILE.read_text()
-    for line in content.split('\n'):
-        if ':' in line:
-            key, value = line.split(':', 1)
-            key = key.strip().lower().replace(' ', '_')
-            if value.strip():
-                tokens[key] = value.strip()
+    lines = TOKENS_FILE.read_text().strip().split('\n')
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if line and ':' not in line and i + 1 < len(lines):
+            key = line.lower().replace(' ', '_')
+            value = lines[i + 1].strip()
+            if value:
+                tokens[key] = value
+            i += 2
+        else:
+            i += 1
     return tokens
 
 
