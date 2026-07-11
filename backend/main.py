@@ -2,8 +2,11 @@ import logging
 import os
 import sys
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+load_dotenv()
+
+from fastapi import FastAPI, HTTPException  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
 logging.basicConfig(
     level=os.environ.get("LOG_LEVEL", "INFO").upper(),
@@ -17,8 +20,8 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 log = logging.getLogger(__name__)
 
-from routers import matcher
-from routers.auth import router as auth_router
+from routers import matcher  # noqa: E402
+from routers.auth import router as auth_router  # noqa: E402
 
 
 app = FastAPI(title="Wikidata-OSM Matcher", version="0.1.0")

@@ -101,7 +101,7 @@ class TestConfirmMatch:
     @patch("routers.matcher.WikidataClient")
     def test_confirm_success(self, mock_client_class):
         mock_client = make_mock_wikidata_client()
-        mock_client.update_property = AsyncMock(return_value=True)
+        mock_client.update_property = MagicMock(return_value=True)
         mock_client_class.return_value = mock_client
 
         response = client.post(
@@ -114,7 +114,7 @@ class TestConfirmMatch:
     @patch("routers.matcher.WikidataClient")
     def test_confirm_wikidata_failure(self, mock_client_class):
         mock_client = make_mock_wikidata_client()
-        mock_client.update_property = AsyncMock(return_value=False)
+        mock_client.update_property = MagicMock(return_value=False)
         mock_client_class.return_value = mock_client
 
         response = client.post(
@@ -128,7 +128,7 @@ class TestRejectMatch:
     @patch("routers.matcher.WikidataClient")
     def test_reject_success(self, mock_client_class):
         mock_client = make_mock_wikidata_client()
-        mock_client.add_not_found_marker = AsyncMock(return_value=True)
+        mock_client.add_not_found_marker = MagicMock(return_value=True)
         mock_client_class.return_value = mock_client
 
         response = client.post(
@@ -141,7 +141,7 @@ class TestRejectMatch:
     @patch("routers.matcher.WikidataClient")
     def test_reject_wikidata_failure(self, mock_client_class):
         mock_client = make_mock_wikidata_client()
-        mock_client.add_not_found_marker = AsyncMock(return_value=False)
+        mock_client.add_not_found_marker = MagicMock(return_value=False)
         mock_client_class.return_value = mock_client
 
         response = client.post(

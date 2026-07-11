@@ -13,9 +13,8 @@ class WikidataSettings(BaseSettings):
         env_prefix="WIKIMEDIA_",
     )
 
-    client_key: str = ""
-    client_secret: str = ""
-    access_token: str = ""
+    bot_user: str = ""
+    bot_pass: str = ""
 
 
 class OsmSettings(BaseSettings):

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from clients.wikidata import WikidataClient, WikidataItem, WikidataCoordinates
 from clients.overpass import OverpassClient, OverpassError
 from matcher import NameMatcher, BBoxMatcher
-from config import get_config, get_all_configs, get_config_by_qid, get_wikidata_settings, get_osm_settings
+from config import ObjectTypeConfig, get_all_configs, get_config_by_qid, get_osm_settings, get_wikidata_settings
 
 
 log = logging.getLogger(__name__)
@@ -118,7 +118,7 @@ async def get_countries(type_qid: str):
     log.info(f"Getting countries for type_qid={type_qid}")
     object_type, config = get_config_by_qid(type_qid)
     settings = get_wikidata_settings()
-    async with WikidataClient(access_token=settings.access_token) as wikidata:
+    async with WikidataClient() as wikidata:
         results = await wikidata.sparql_query(config.wikidata.sparql_query)
         items = wikidata.parse_sparql_result(results, config.wikidata.label_property)
 
@@ -146,7 +146,7 @@ async def get_divisions(type_qid: str, country_qid: str):
     query = query.replace('?item wdt:P17 ?country .', f'?item wdt:P17 wd:{country_qid} .')
     query += '}'
 
-    async with WikidataClient(access_token=settings.access_token) as wikidata:
+    async with WikidataClient() as wikidata:
         results = await wikidata.sparql_query(query)
         items = wikidata.parse_sparql_result(results, config.wikidata.label_property)
 
@@ -175,7 +175,7 @@ async def get_candidates_by_division(type_qid: str, country_qid: str, division_q
     query = query.replace('?item wdt:P131 ?division .', f'?item wdt:P131 wd:{division_qid} .')
     query += '}'
 
-    async with WikidataClient(access_token=settings.access_token) as wikidata:
+    async with WikidataClient() as wikidata:
         results = await wikidata.sparql_query(query)
         items = wikidata.parse_sparql_result(results, config.wikidata.label_property)
         log.info(f"Returning {len(items)} candidates for {object_type} in {country_qid}/{division_qid}")
@@ -198,7 +198,7 @@ async def get_matches(type_qid: str, country_qid: str, division_qid: str, qid: s
     object_type, config = get_config_by_qid(type_qid)
     settings = get_wikidata_settings()
     osm_settings = get_osm_settings()
-    async with WikidataClient(access_token=settings.access_token) as wikidata, OverpassClient(timeout=config.overpass.timeout) as overpass:
+    async with WikidataClient() as wikidata, OverpassClient(timeout=config.overpass.timeout) as overpass:
         item = await wikidata.get_item(qid)
         try:
             matcher = get_matcher_type(config, wikidata, overpass)
@@ -240,19 +240,18 @@ async def get_matches(type_qid: str, country_qid: str, division_qid: str, qid: s
 @router.post("/types/{type_qid}/countries/{country_qid}/divisions/{division_qid}/candidates/{qid}/confirm")
 async def confirm_match(type_qid: str, country_qid: str, division_qid: str, qid: str, request: ConfirmRequest):
     object_type, config = get_config_by_qid(type_qid)
-    settings = get_wikidata_settings()
     prop = config.wikidata.node_property if request.osm_type == "node" else \
            config.wikidata.way_property if request.osm_type == "way" else \
            config.wikidata.relation_property if request.osm_type == "relation" else \
            config.wikidata.update_property
     if not prop:
         raise HTTPException(status_code=500, detail=f"No property configured for OSM type: {request.osm_type}")
-    async with WikidataClient(access_token=settings.access_token) as wikidata:
-        success = await wikidata.update_property(
-            qid=qid,
-            property_id=prop,
-            value=request.osm_id,
-        )
+    wikidata = WikidataClient()
+    success = wikidata.update_property(
+        qid=qid,
+        property_id=prop,
+        value=request.osm_id,
+    )
     if not success:
         raise HTTPException(status_code=500, detail="Failed to update Wikidata")
     return {"status": "ok"}
@@ -261,20 +260,19 @@ async def confirm_match(type_qid: str, country_qid: str, division_qid: str, qid:
 @router.post("/types/{type_qid}/countries/{country_qid}/divisions/{division_qid}/candidates/{qid}/reject")
 async def reject_match(type_qid: str, country_qid: str, division_qid: str, qid: str, request: RejectRequest):
     object_type, config = get_config_by_qid(type_qid)
-    settings = get_wikidata_settings()
-    async with WikidataClient(access_token=settings.access_token) as wikidata:
-        if config.wikidata.not_found_qualifier:
-            success = await wikidata.add_not_found_marker(
-                qid=qid,
-                property_id=config.wikidata.not_found_property,
-                qualifier_property=config.wikidata.not_found_qualifier,
-            )
-        else:
-            success = await wikidata.update_property(
-                qid=qid,
-                property_id=config.wikidata.not_found_property,
-                value="not found",
-            )
+    wikidata = WikidataClient()
+    if config.wikidata.not_found_qualifier:
+        success = wikidata.add_not_found_marker(
+            qid=qid,
+            property_id=config.wikidata.not_found_property,
+            qualifier_property=config.wikidata.not_found_qualifier,
+        )
+    else:
+        success = wikidata.update_property(
+            qid=qid,
+            property_id=config.wikidata.not_found_property,
+            value="not found",
+        )
     if not success:
         raise HTTPException(status_code=500, detail="Failed to update Wikidata")
     return {"status": "ok"}

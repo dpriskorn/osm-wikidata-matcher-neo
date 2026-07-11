@@ -1,20 +1,17 @@
 import logging
-import httpx
 import re
-from typing import Any, Self
+import os
 from datetime import datetime, timezone
 from pydantic import BaseModel
-from wikibaseintegrator import wbi_helpers, wbi_config
+from wikibaseintegrator import wbi_helpers
+from wikibaseintegrator.wbi_config import config as wbi_config
 
 
 log = logging.getLogger(__name__)
 
 USER_AGENT = "osm-wikidata-matcher-neo 1.0 (https://github.com/anomalyco/opencode)"
-wbi_config.config["USER_AGENT"] = USER_AGENT
-
-WIKIDATA_API_URL = "https://www.wikidata.org/w/api.php"
-
-HEADERS = {"User-Agent": USER_AGENT}
+wbi_config["USER_AGENT"] = USER_AGENT
+wbi_config["MEDIAWIKI_API_URL"] = "https://www.wikidata.org/w/api.php"
 
 
 class WikidataCoordinates(BaseModel):
@@ -33,24 +30,28 @@ class WikidataItem(BaseModel):
 
 
 class WikidataClient:
-    def __init__(self, access_token: str = "") -> None:
-        self._client = httpx.AsyncClient(timeout=30.0)
-        self._access_token = access_token
+    def __init__(self) -> None:
+        self._wbi = None
 
-    async def __aenter__(self) -> Self:
-        return self
+    def _get_wbi(self):
+        if self._wbi is None:
+            from wikibaseintegrator import WikibaseIntegrator
+            from wikibaseintegrator.wbi_login import Login
 
-    async def __aexit__(self, *args: Any) -> None:
-        await self._client.aclose()
+            bot_user = os.getenv("WIKIMEDIA_BOT_USER", "")
+            bot_pass = os.getenv("WIKIMEDIA_BOT_PASS", "")
+            login = Login(user=bot_user, password=bot_pass)
+            self._wbi = WikibaseIntegrator(login=login)
+        return self._wbi
 
-    async def sparql_query(self, query: str) -> list[dict[str, Any]]:
+    def sparql_query(self, query: str) -> list[dict[str, any]]:
         log.debug("Executing SPARQL query via wikibaseintegrator")
         data = wbi_helpers.execute_sparql_query(query)
         results = data.get("results", {}).get("bindings", [])
         log.debug(f"SPARQL returned {len(results)} raw results")
         return results
 
-    async def get_item(self, qid: str) -> WikidataItem:
+    def get_item(self, qid: str) -> WikidataItem:
         query = f"""
         SELECT ?itemLabel ?country ?countryLabel ?coord WHERE {{
           BIND(wd:{qid} AS ?item)
@@ -59,7 +60,7 @@ class WikidataClient:
           SERVICE wikibase:label {{ bd:serviceParam wikibase:language "sv,en". }}
         }}
         """
-        results = await self.sparql_query(query)
+        results = self.sparql_query(query)
         if not results:
             raise ValueError(f"Item {qid} not found")
         r = results[0]
@@ -74,55 +75,47 @@ class WikidataClient:
             coord=coord,
         )
 
-    async def update_property(self, qid: str, property_id: str, value: str) -> bool:
-        token = await self._get_edit_token()
-        data = {
-            "action": "wbcreateclaim",
-            "entity": qid,
-            "property": property_id,
-            "value": f'"{value}"',
-            "token": token,
-            "format": "json",
-        }
-        async with httpx.AsyncClient() as client:
-            response = await client.post(WIKIDATA_API_URL, data=data, headers=HEADERS)
-            return response.status_code == 200
+    def update_property(self, qid: str, property_id: str, value: str) -> bool:
+        from wikibaseintegrator import datatypes
 
-    async def add_not_found_marker(
+        try:
+            item = self._get_wbi().item.get(qid)
+            claim = datatypes.ExternalID(prop_nr=property_id, value=value)
+            item.claims.add(claim)
+            item.write()
+            return True
+        except Exception as e:
+            log.warning(f"Wikidata update failed: {e}")
+            return False
+
+    def add_not_found_marker(
         self,
         qid: str,
         property_id: str,
         qualifier_property: str,
     ) -> bool:
-        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        token = await self._get_edit_token()
-        data = {
-            "action": "wbcreateclaim",
-            "entity": qid,
-            "property": property_id,
-            "value": '"not found"',
-            "qualifiers": qualifier_property,
-            "qualifier-value": f'"{now}"',
-            "token": token,
-            "format": "json",
-        }
-        async with httpx.AsyncClient() as client:
-            response = await client.post(WIKIDATA_API_URL, data=data, headers=HEADERS)
-            return response.status_code == 200
+        from wikibaseintegrator import datatypes
 
-    async def _get_edit_token(self) -> str:
-        auth_headers = {"Authorization": f"Bearer {self._access_token}"} if self._access_token else {}
-        headers = {**HEADERS, **auth_headers}
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                WIKIDATA_API_URL,
-                params={"action": "query", "meta": "token", "format": "json"},
-                headers=headers,
+        try:
+            now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            item = self._get_wbi().item.get(qid)
+            qualifiers = datatypes.Time(
+                prop_nr=qualifier_property,
+                time=f"+{now}/11",
             )
-            data = response.json()
-            return data.get("query", {}).get("tokens", {}).get("csrfToken", "")
+            claim = datatypes.String(
+                prop_nr=property_id,
+                value="not found",
+                qualifiers=[qualifiers],
+            )
+            item.claims.add(claim)
+            item.write()
+            return True
+        except Exception as e:
+            log.warning(f"Wikidata add_not_found_marker failed: {e}")
+            return False
 
-    def parse_sparql_result(self, results: list[dict[str, Any]], label_property: str) -> list[WikidataItem]:
+    def parse_sparql_result(self, results: list[dict[str, any]], label_property: str) -> list[WikidataItem]:
         items: list[WikidataItem] = []
         for r in results:
             qid = self._extract_qid(r.get("item", {}).get("value", ""))
