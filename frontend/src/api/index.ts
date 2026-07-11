@@ -84,3 +84,10 @@ export async function rejectMatch(
     reason,
   })
 }
+
+export async function getWikidataLabel(qid: string): Promise<string> {
+  const lang = navigator.language.split('-')[0] || 'en'
+  const { data } = await axios.get(`https://www.wikidata.org/wiki/Special:EntityData/${qid}.json`)
+  const entity = data.entities?.[qid]
+  return entity?.labels?.[lang]?.value || entity?.labels?.en?.value || qid
+}

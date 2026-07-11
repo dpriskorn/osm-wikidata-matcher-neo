@@ -1,12 +1,32 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { getWikidataLabel } from './api'
 
 const route = useRoute()
+const typeLabel = ref<string | null>(null)
+
+async function fetchTypeLabel() {
+  if (route.params.typeQid) {
+    try {
+      typeLabel.value = await getWikidataLabel(route.params.typeQid as string)
+    } catch {
+      typeLabel.value = null
+    }
+  } else {
+    typeLabel.value = null
+  }
+}
+
+watch(() => route.params.typeQid, fetchTypeLabel, { immediate: true })
 
 const pageTitle = computed(() => {
   if (route.path === '/') return 'Wikidata-OSM Matcher'
-  if (route.params.typeQid) return `Typ: ${route.params.typeQid}`
+  if (route.params.typeQid) {
+    const qid = route.params.typeQid
+    if (typeLabel.value) return `Typ: ${typeLabel.value} (${qid})`
+    return `Typ: ${qid}`
+  }
   return 'Wikidata-OSM Matcher'
 })
 </script>

@@ -48,6 +48,7 @@ function selectCandidate(qid: string) {
           :key="c.qid"
           @click="selectCandidate(c.qid)"
           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          style="cursor: pointer"
         >
           <div>
             <span class="fw-bold">{{ c.label }}</span>
