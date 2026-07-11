@@ -43,6 +43,7 @@ class NameMatcher(Matcher[WikidataItem]):
                     osm_id=osm.osm_id,
                     osm_type=osm.osm_type,
                     osm_name=osm.name,
+                    tags=osm.tags,
                 ))
 
         candidates.sort(key=lambda c: c.similarity, reverse=True)

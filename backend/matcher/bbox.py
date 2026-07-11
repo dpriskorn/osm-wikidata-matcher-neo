@@ -40,11 +40,21 @@ class BBoxMatcher(Matcher[WikidataItem]):
         osm_timestamp = raw_results.get("osm3s", {}).get("timestamp_osm_base")
 
         candidates = []
+        has_wikidata_match = False
+        has_leisure_bathing_place = False
+
         for osm in osm_items:
-            sim = self.similarity(wikidata_item.label, osm.name)
+            wikidata_names = [wikidata_item.label] + wikidata_item.aliases
+            sim = self.best_similarity(wikidata_names, osm.name)
             wikidata_match = osm.wikidata_tag == wikidata_item.qid
+            is_leisure_bathing_place = osm.osm_type == "node" and osm.tags.get("leisure") == "bathing_place"
+
             if wikidata_match:
                 sim = 1.0
+                has_wikidata_match = True
+            elif is_leisure_bathing_place:
+                has_leisure_bathing_place = True
+
             candidates.append(MatchCandidate(
                 item=wikidata_item,
                 similarity=sim,
@@ -54,12 +64,26 @@ class BBoxMatcher(Matcher[WikidataItem]):
                 wikidata_match=wikidata_match,
                 lat=osm.lat,
                 lon=osm.lon,
+                tags=osm.tags,
+                needs_investigation=not has_wikidata_match and not is_leisure_bathing_place,
             ))
 
-        candidates.sort(key=lambda c: c.similarity, reverse=True)
-        log.info(f"BBoxMatcher: found {len(candidates)} matches for {wikidata_item.label}")
+        if not has_wikidata_match and not has_leisure_bathing_place:
+            for c in candidates:
+                c.needs_investigation = True
+        elif not has_wikidata_match and has_leisure_bathing_place:
+            for c in candidates:
+                if c.osm_type != "node" or c.tags.get("leisure") != "bathing_place":
+                    c.needs_investigation = True
+
+        candidates.sort(key=lambda c: (
+            not c.wikidata_match,
+            not (c.osm_type == "node" and c.tags.get("leisure") == "bathing_place"),
+            not c.similarity,
+        ))
+        log.info(f"BBoxMatcher: found {len(candidates)} matches for {wikidata_item.label}, wikidata_match={has_wikidata_match}, leisure_bathing_place={has_leisure_bathing_place}")
         for c in candidates:
-            log.debug(f"  - {c.osm_type}/{c.osm_id} '{c.osm_name}' similarity={c.similarity:.2f}")
+            log.debug(f"  - {c.osm_type}/{c.osm_id} '{c.osm_name}' similarity={c.similarity:.2f}, wikidata_match={c.wikidata_match}, needs_investigation={c.needs_investigation}")
         return candidates, osm_timestamp
 
     def _coord_to_bbox(self, lat: float, lon: float) -> str:

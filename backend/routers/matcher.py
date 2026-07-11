@@ -73,6 +73,8 @@ class MatchInfo(BaseModel):
     lon: float | None = None
     distance_m: float | None = None
     property_id: str | None = None
+    tags: dict[str, str] = {}
+    needs_investigation: bool = False
 
 
 class MatchResponse(BaseModel):
@@ -220,6 +222,8 @@ async def get_matches(type_qid: str, country_qid: str, division_qid: str, qid: s
                         lon=m.lon,
                         distance_m=round(haversine_distance(item.coord.lat, item.coord.lon, m.lat, m.lon)) if item.coord and m.lat and m.lon else None,
                         property_id=get_property_for_osm_type(config, m.osm_type),
+                        tags=m.tags,
+                        needs_investigation=m.needs_investigation,
                     )
                     for m in matches
                 ],

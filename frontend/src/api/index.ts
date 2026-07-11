@@ -44,6 +44,8 @@ export interface MatchInfo {
   lon: number | null
   distance_m: number | null
   property_id: string | null
+  tags: Record<string, string>
+  needs_investigation: boolean
 }
 
 export interface MatchResponse {

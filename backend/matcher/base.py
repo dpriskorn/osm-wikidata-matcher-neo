@@ -16,6 +16,8 @@ class MatchCandidate(BaseModel, Generic[T]):
     wikidata_match: bool = False
     lat: float | None = None
     lon: float | None = None
+    tags: dict[str, str] = {}
+    needs_investigation: bool = False
 
     @property
     def osm_url(self) -> str:
@@ -41,6 +43,11 @@ class Matcher(ABC, Generic[T]):
         cleaned1 = self.clean_name(name1)
         cleaned2 = self.clean_name(name2)
         return fuzz.token_sort_ratio(cleaned1, cleaned2) / 100.0
+
+    def best_similarity(self, wikidata_names: list[str], osm_name: str) -> float:
+        if not wikidata_names or not osm_name:
+            return 0.0
+        return max(self.similarity(w, osm_name) for w in wikidata_names)
 
     @abstractmethod
     async def find_matches(self, wikidata_item: T) -> tuple[list[MatchCandidate[T]], str | None]:

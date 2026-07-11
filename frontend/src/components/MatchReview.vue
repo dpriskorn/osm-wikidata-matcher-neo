@@ -137,6 +137,17 @@ function formatDistance(meters: number | null): string {
 function formatOsmTypeId(type: string, id: string): string {
   return t('matchReview.osmTypeId', { type: type.toUpperCase(), id })
 }
+
+function filteredTags(tags: Record<string, string>): Record<string, string> {
+  const exclude = ['name', 'name:sv', 'wikidata', 'source']
+  const filtered: Record<string, string> = {}
+  for (const [key, value] of Object.entries(tags)) {
+    if (!exclude.includes(key)) {
+      filtered[key] = value
+    }
+  }
+  return filtered
+}
 </script>
 
 <template>
@@ -199,6 +210,13 @@ function formatOsmTypeId(type: string, id: string): string {
                 </span>
               </div>
               <span class="fw-bold">{{ m.osm_name || t('matchReview.noName') }}</span>
+            </div>
+            <div v-if="Object.keys(m.tags).length > 2" class="mb-2">
+              <small class="text-muted">
+                <span v-for="(value, key) in filteredTags(m.tags)" :key="key" class="me-2">
+                  <code>{{ key }}={{ value }}</code>
+                </span>
+              </small>
             </div>
             <div class="d-flex gap-2">
               <a :href="getEditUrl(m.osm_type, m.osm_id, m.zoom)"

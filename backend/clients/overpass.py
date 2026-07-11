@@ -35,6 +35,7 @@ class OverpassResult(BaseModel):
     wikidata_tag: str | None = None
     lat: float | None = None
     lon: float | None = None
+    tags: dict[str, str] = {}
 
 
 class OverpassClient:
@@ -116,6 +117,7 @@ class OverpassClient:
                     wikidata_tag=wikidata_tag,
                     lat=lat,
                     lon=lon,
+                    tags=tags,
                 ))
         log.info(f"Parsed {len(results)} OSM objects from {len(elements)} elements")
         return results

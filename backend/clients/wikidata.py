@@ -22,6 +22,7 @@ class WikidataCoordinates(BaseModel):
 class WikidataItem(BaseModel):
     qid: str
     label: str
+    aliases: list[str] = []
     country: str | None = None
     country_label: str | None = None
     division: str | None = None
@@ -59,23 +60,32 @@ class WikidataClient:
 
     def get_item(self, qid: str) -> WikidataItem:
         query = f"""
-        SELECT ?itemLabel ?country ?countryLabel ?coord WHERE {{
+        SELECT ?itemLabel ?country ?countryLabel ?coord ?alias WHERE {{
           BIND(wd:{qid} AS ?item)
           OPTIONAL {{ ?item wdt:P17 ?country }}
           OPTIONAL {{ ?item wdt:P625 ?coord }}
+          OPTIONAL {{ ?item skos:altLabel ?alias FILTER(LANG(?alias) = "sv") }}
           SERVICE wikibase:label {{ bd:serviceParam wikibase:language "sv,en". }}
         }}
         """
         results = self.sparql_query(query)
         if not results:
             raise ValueError(f"Item {qid} not found")
+
         r = results[0]
         coord = None
         if coord_str := r.get("coord", {}).get("value"):
             coord = self._parse_coord(coord_str)
+
+        aliases = []
+        for result in results:
+            if alias := result.get("alias", {}).get("value"):
+                aliases.append(alias)
+
         return WikidataItem(
             qid=qid,
             label=r.get("itemLabel", {}).get("value", ""),
+            aliases=aliases,
             country=self._extract_qid(r.get("country", {}).get("value")),
             country_label=r.get("countryLabel", {}).get("value"),
             coord=coord,
