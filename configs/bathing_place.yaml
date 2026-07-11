@@ -1,0 +1,39 @@
+object_type: bathing_place
+label: "Badplatser"
+
+wikidata:
+  sparql_query: |
+    SELECT ?item ?itemLabel ?coord ?country ?countryLabel WHERE {
+      ?item wdt:P31 wd:Q15059964 .
+      ?item wdt:P625 ?coord .
+      MINUS { ?item wdt:P402 [] }
+      OPTIONAL { ?item wdt:P17 ?country }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "sv,en". }
+    }
+  label_property: itemLabel
+  coord_property: coord
+  update_property: P402
+  not_found_property: P9660
+  not_found_qualifier: P5017
+
+overpass:
+  query: |
+    [out:json][timeout:25];
+    (
+      node["leisure"="beach_access"]({{bbox}});
+      node["natural"="beach"]({{bbox}});
+      way["leisure"="beach_access"]({{bbox}});
+      way["natural"="beach"]({{bbox}});
+    );
+    out body center;
+  bbox_from_coord: true
+  bbox_radius_km: 1.0
+
+matching:
+  method: bbox
+  similarity_threshold: 0.25
+  exclude_words:
+    - "badplats"
+    - "strand"
+    - "bathing"
+    - "beach"

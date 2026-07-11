@@ -1,13 +1,54 @@
 # Wikidata-OSM Matcher
 
-A FastAPI + Vue/Vite application for matching Wikidata items to OpenStreetMap objects.
+Webbapplikation för att matcha Wikidata-objekt mot OpenStreetMap med manuell validering.
 
-## Tech Stack
+## Översikt
 
-- **Backend**: FastAPI, Python 3.10+, rapidfuzz, PyYAML
-- **Frontend**: Vue 3, Vite, TypeScript, Pinia, Axios
+Systemet hämtar objekt från Wikidata som saknar OSM-länk (P402), presenterar kandidater från Overpass API för matchning, och låter användaren bekräfta eller avvisa varje matchning.
 
-## Setup
+## Arkitektur
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Vue/Vite  │────▶│   FastAPI   │────▶│  Wikidata   │
+│  Frontend   │◀────│   Backend   │────▶│  (SPARQL)   │
+└─────────────┘     └──────┬──────┘     └─────────────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │  Overpass   │
+                    │    API      │
+                    └─────────────┘
+```
+
+## Objekttyper
+
+Matcheringsmetoderna konfigureras per objekttyp i YAML:
+
+| Typ | Metod | Beskrivning |
+|-----|-------|-------------|
+| `hiking_trail` | name | Namnbaserad fuzzy match inom landets bbox |
+| `bathing_place` | bbox | Geografisk sökning inom 1km radie från koordinater |
+
+## Konfiguration
+
+YAML-filer i `configs/`:
+
+```yaml
+object_type: hiking_trail
+label: "Vandringsleder"
+
+wikidata:
+  sparql_query: |     # SPARQL för att hämta objekt utan P402
+  overpass:
+    query: |          # Overpass QL med {{bbox}} placeholder
+  matching:
+    method: name     # "name" eller "bbox"
+    similarity_threshold: 0.3
+    exclude_words: [...]
+```
+
+## Installation
 
 ### Backend
 
@@ -25,13 +66,35 @@ npm install
 npm run dev
 ```
 
-## Features
+## API Endpoints
 
-- Match Wikidata items to OSM objects based on configurable rules
-- Support for different entity types (hiking trails, bathing places, etc.)
-- Fuzzy string matching using rapidfuzz
-- REST API with CORS support
+| Method | Endpoint | Beskrivning |
+|--------|----------|-------------|
+| GET | `/api/types` | Lista objekttyper |
+| GET | `/api/types/{type}/candidates` | Objekt som behöver matchas |
+| GET | `/api/types/{type}/candidates/{qid}/matches` | OSM-kandidater för ett objekt |
+| POST | `/api/types/{type}/candidates/{qid}/confirm` | Bekräfta matchning |
+| POST | `/api/types/{type}/candidates/{qid}/reject` | Markera som "ingen match" |
 
-## Configuration
+## Wikidata OAuth
 
-YAML configuration files in `configs/` define matching rules for different entity types.
+Skrivåtkomst till Wikidata kräver OAuth-autentisering. Konfigurera credentials i miljövariabler:
+
+- `WIKIDATA_CONSUMER_KEY`
+- `WIKIDATA_CONSUMER_SECRET`
+
+## Lägga till ny objekttyp
+
+1. Skapa `configs/{ny_typ}.yaml` med SPARQL-query och Overpass-fråga
+2. Starta om backend
+3. Ny typ dyker upp i webbgränssnittet
+
+## Tech Stack
+
+| Lager | Teknologi |
+|-------|-----------|
+| Backend | FastAPI, Pydantic, httpx |
+| Frontend | Vue 3, Vite, TypeScript, Pinia |
+| Matching | rapidfuzz (fuzzy string matching) |
+| Wikidata | SPARQL + Wikibase API |
+| OSM | Overpass API |
