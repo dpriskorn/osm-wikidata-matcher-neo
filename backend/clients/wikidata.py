@@ -77,31 +77,47 @@ class WikidataClient:
         log.debug(f"SPARQL returned {len(results)} raw results")
         return results
 
+    def fetch_item_from_entity_api(self, qid: str) -> dict | None:
+        url = f"https://www.wikidata.org/wiki/Special:EntityData/{qid}.json"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return response.json()
+        log.warning(f"EntityData API failed for {qid}")
+        return None
+
     def get_item(self, qid: str) -> WikidataItem:
-        query = f"""
-        SELECT ?country ?coord ?badkartan WHERE {{
-          BIND(wd:{qid} AS ?item)
-          OPTIONAL {{ ?item wdt:P17 ?country }}
-          OPTIONAL {{ ?item wdt:P625 ?coord }}
-          OPTIONAL {{ ?item wdt:P9615 ?badkartan }}
-        }}
-        """
-        results = self.sparql_query(query)
-        if not results:
+        # Use EntityData API for coordinates (more reliable than Qlever sync)
+        entity_data = self.fetch_item_from_entity_api(qid)
+        if not entity_data:
             raise ValueError(f"Item {qid} not found")
 
-        r = results[0]
+        item_data = entity_data.get('entities', {}).get(qid, {})
+        claims = item_data.get('claims', {})
+
         coord = None
-        if coord_str := r.get("coord", {}).get("value"):
-            coord = self._parse_coord(coord_str)
+        if 'P625' in claims:
+            coord_data = claims['P625'][0]['mainsnak']['datavalue']['value']
+            coord = WikidataCoordinates(lat=coord_data['latitude'], lon=coord_data['longitude'])
+
+        badkartan = None
+        if 'P9615' in claims:
+            badkartan = claims['P9615'][0]['mainsnak']['datavalue']['value']
+
+        country = None
+        if 'P17' in claims:
+            country = claims['P17'][0]['mainsnak']['datavalue']['value']
+            if isinstance(country, dict) and 'id' in country:
+                country = country['id']
+            else:
+                country = None
 
         return WikidataItem(
             qid=qid,
-            label="",  # Labels fetched via frontend REST API
+            label="",
             aliases=[],
-            country=self._extract_qid(r.get("country", {}).get("value")),
+            country=country,
             coord=coord,
-            badkartan=r.get("badkartan", {}).get("value"),
+            badkartan=badkartan,
         )
 
     def update_property(self, qid: str, property_id: str, value: str) -> bool:
