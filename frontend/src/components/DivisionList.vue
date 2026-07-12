@@ -60,10 +60,14 @@ async function fetchDivisionCoords() {
   initMap()
 }
 
+const USER_AGENT = 'osm-wikidata-matcher-neo 1.0 (https://github.com/anomalyco/opencode)'
+
 async function getDivisionCoord(qid: string): Promise<{ lat: number; lon: number } | null> {
   try {
     const url = `https://www.wikidata.org/wiki/Special:EntityData/${qid}.json`
-    const response = await fetch(url)
+    const response = await fetch(url, {
+      headers: { 'User-Agent': USER_AGENT },
+    })
     if (!response.ok) return null
     const data = await response.json()
     const claims = data.entities?.[qid]?.claims
