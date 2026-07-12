@@ -14,8 +14,7 @@ wikidata:
       PREFIX wd: <http://www.wikidata.org/entity/>
       PREFIX wdt: <http://www.wikidata.org/prop/direct/>
       SELECT DISTINCT ?division ?coord WHERE {
-        VALUES ?division
-        {?divisions_values}
+        VALUES ?division {?divisions_values}
         ?division wdt:P625 ?coord .
       }
     values_variable: divisions_values
