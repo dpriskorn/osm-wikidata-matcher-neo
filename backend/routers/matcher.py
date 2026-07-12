@@ -189,7 +189,7 @@ async def get_divisions(type_qid: str, country_qid: str):
         coord_results = wikidata.sparql_query(div_coords_query)
         coord_map: dict[str, tuple[float, float]] = {}
         for r in coord_results:
-            div_uri = r.get("item", {}).get("value", "")
+            div_uri = r.get("division", {}).get("value", "")
             if not div_uri:
                 continue
             div_qid = wikidata._extract_qid(div_uri)

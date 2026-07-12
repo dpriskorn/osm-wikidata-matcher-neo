@@ -13,10 +13,10 @@ wikidata:
     sparql_query: |
       PREFIX wd: <http://www.wikidata.org/entity/>
       PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-      SELECT DISTINCT ?item ?coord WHERE {
-        VALUES ?divisions
+      SELECT DISTINCT ?division ?coord WHERE {
+        VALUES ?division
         {?divisions_values}
-        ?item wdt:P625 ?divisions .
+        ?division wdt:P625 ?coord .
       }
     values_variable: divisions_values
     country_variable: country
