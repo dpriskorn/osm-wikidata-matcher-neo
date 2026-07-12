@@ -1,5 +1,6 @@
 import logging
 import math
+import re
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -61,6 +62,8 @@ class DivisionInfo(BaseModel):
     qid: str
     label: str
     count: int
+    lat: float | None = None
+    lon: float | None = None
 
 
 class MatchInfo(BaseModel):
@@ -153,18 +156,31 @@ async def get_divisions(type_qid: str, country_qid: str):
 
     with WikidataClient() as wikidata:
         results = wikidata.sparql_query(query)
-        items = wikidata.parse_sparql_result(results, config.wikidata.label_property)
 
-        division_counts: dict[str, tuple[str, int]] = {}
-        for item in items:
-            div = item.division or "unknown"
-            if div not in division_counts:
-                division_counts[div] = (item.division_label or div, 0)
-            division_counts[div] = (division_counts[div][0], division_counts[div][1] + 1)
+        division_data: dict[str, dict] = {}
+        for r in results:
+            div_uri = r.get("division", {}).get("value", "")
+            if not div_uri:
+                continue
+            div_qid = wikidata._extract_qid(div_uri)
+            if not div_qid:
+                continue
+
+            div_label = r.get("divisionLabel", {}).get("value") or div_qid
+            div_coord_str = r.get("divCoord", {}).get("value", "")
+            lat, lon = None, None
+            if div_coord_str:
+                coord_match = re.match(r"Point\(([^ ]+) ([^ ]+)\)", div_coord_str)
+                if coord_match:
+                    lon, lat = float(coord_match.group(1)), float(coord_match.group(2))
+
+            if div_qid not in division_data:
+                division_data[div_qid] = {"label": div_label, "count": 0, "lat": lat, "lon": lon}
+            division_data[div_qid]["count"] += 1
 
         return [
-            DivisionInfo(qid=qid, label=label, count=count)
-            for qid, (label, count) in sorted(division_counts.items(), key=lambda x: -x[1][1])
+            DivisionInfo(qid=qid, label=data["label"], count=data["count"], lat=data["lat"], lon=data["lon"])
+            for qid, data in sorted(division_data.items(), key=lambda x: -x[1]["count"])
         ]
 
 

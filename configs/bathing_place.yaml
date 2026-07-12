@@ -4,11 +4,12 @@ qid: Q567998  # Bathing place (Swimming facility)
 
 wikidata:
   sparql_query: |
-    SELECT DISTINCT ?item ?coord ?country ?division ?badkartan WHERE {
+    SELECT DISTINCT ?division ?divCoord ?country WHERE {
       ?item wdt:P31 wd:Q567998 .
       ?item wdt:P625 ?coord .
       ?item wdt:P17 ?country .
       ?item wdt:P131 ?division .
+      ?division wdt:P625 ?divCoord .
       OPTIONAL { ?item wdt:P9615 ?badkartan }
       MINUS { ?item wdt:P10689 [] } # way
       MINUS { ?item wdt:P402 [] } # rel

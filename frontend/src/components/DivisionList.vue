@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getDivisions, getWikidataLabel, type DivisionInfo } from '../api'
@@ -16,25 +16,23 @@ const router = useRouter()
 const divisions = ref<DivisionInfo[]>([])
 const loading = ref(true)
 const labelsLoading = ref(true)
-const coordsLoading = ref(true)
 const error = ref<string | null>(null)
 const labels = ref<Record<string, string>>({})
-const divisionCoords = ref<Record<string, { lat: number; lon: number }>>({})
 const mapContainer = ref<HTMLDivElement | null>(null)
 let map: L.Map | null = null
 const totalCandidates = computed(() => divisions.value.reduce((sum, d) => sum + d.count, 0))
 const divisionsWithCandidates = computed(() => divisions.value.filter(d => d.count > 0).length)
+const divisionsWithCoords = computed(() => divisions.value.filter(d => d.lat != null && d.lon != null))
 
 onMounted(async () => {
   try {
     divisions.value = await getDivisions(props.typeQid, props.countryQid)
-    await Promise.all([fetchLabels(), fetchDivisionCoords()])
+    await fetchLabels()
   } catch (e) {
     error.value = 'Kunde inte ladda administrativa enheter'
   } finally {
     loading.value = false
     labelsLoading.value = false
-    coordsLoading.value = false
   }
 })
 
@@ -45,44 +43,14 @@ async function fetchLabels() {
   results.forEach((label, i) => {
     labels.value[divisions.value[i].qid] = label
   })
-}
-
-async function fetchDivisionCoords() {
-  const results = await Promise.all(
-    divisions.value.map(d => getDivisionCoord(d.qid))
-  )
-  results.forEach((coord, i) => {
-    if (coord) {
-      divisionCoords.value[divisions.value[i].qid] = coord
-    }
-  })
   await nextTick()
   initMap()
 }
 
-const USER_AGENT = 'osm-wikidata-matcher-neo 1.0 (https://github.com/anomalyco/opencode)'
-
-async function getDivisionCoord(qid: string): Promise<{ lat: number; lon: number } | null> {
-  try {
-    const url = `https://www.wikidata.org/wiki/Special:EntityData/${qid}.json`
-    const response = await fetch(url, {
-      headers: { 'User-Agent': USER_AGENT },
-    })
-    if (!response.ok) return null
-    const data = await response.json()
-    const claims = data.entities?.[qid]?.claims
-    if (claims?.P625?.[0]?.mainsnak?.datavalue?.value) {
-      const coord = claims.P625[0].mainsnak.datavalue.value
-      return { lat: coord.latitude, lon: coord.longitude }
-    }
-  } catch {}
-  return null
-}
-
 function initMap() {
-  if (!mapContainer.value || Object.keys(divisionCoords.value).length === 0) return
+  if (!mapContainer.value || divisionsWithCoords.value.length === 0) return
 
-  const coords = Object.values(divisionCoords.value)
+  const coords = divisionsWithCoords.value.map(d => ({ lat: d.lat!, lon: d.lon! }))
   const centerLat = coords.reduce((sum, c) => sum + c.lat, 0) / coords.length
   const centerLon = coords.reduce((sum, c) => sum + c.lon, 0) / coords.length
 
@@ -93,11 +61,10 @@ function initMap() {
   }).addTo(map)
 
   divisions.value.forEach(d => {
-    const coord = divisionCoords.value[d.qid]
-    if (!coord) return
+    if (d.lat == null || d.lon == null) return
 
     const name = labels.value[d.qid] || d.qid
-    L.circleMarker([coord.lat, coord.lon], {
+    L.circleMarker([d.lat, d.lon], {
       radius: 8,
       fillColor: '#0d6efd',
       color: '#fff',
@@ -132,8 +99,7 @@ function selectDivision(division: DivisionInfo) {
         <div v-if="divisionsWithCandidates > 0" class="mb-3">
           <small class="text-muted">{{ divisionsWithCandidates }} enheter med {{ totalCandidates }} omatchade</small>
         </div>
-        <div v-if="Object.keys(divisionCoords).length > 0" ref="mapContainer" class="mb-3" style="height: 400px; border-radius: 8px;"></div>
-        <p v-if="coordsLoading && divisions.length > 0" class="text-muted">Laddar karta...</p>
+        <div v-if="divisionsWithCoords.length > 0" ref="mapContainer" class="mb-3" style="height: 400px; border-radius: 8px;"></div>
         <div class="list-group">
         <button
           v-for="d in divisions"

@@ -32,6 +32,8 @@ export interface DivisionInfo {
   qid: string
   label: string
   count: number
+  lat?: number
+  lon?: number
 }
 
 export interface MatchInfo {
