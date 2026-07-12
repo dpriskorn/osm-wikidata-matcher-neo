@@ -76,14 +76,6 @@ npm run dev
 | POST | `/api/types/{type}/candidates/{qid}/confirm` | Confirm match |
 | POST | `/api/types/{type}/candidates/{qid}/reject` | Mark as "no match" |
 
-## Wikidata OAuth
-
-Write access to Wikidata requires OAuth authentication. Configure credentials in environment variables:
-
-- `WIKIMEDIA_CLIENT_KEY`
-- `WIKIMEDIA_CLIENT_SECRET`
-- `WIKIMEDIA_ACCESS_TOKEN`
-
 ## Adding a New Object Type
 
 1. Create `configs/{new_type}.yaml` with SPARQL query and Overpass query
