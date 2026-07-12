@@ -54,7 +54,9 @@ wikidata:
 
 ```bash
 just install
+# Run in terminal 1:
 just api
+# Run in terminal 2:
 just vite
 ```
 
