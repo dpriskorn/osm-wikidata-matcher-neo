@@ -1,12 +1,15 @@
 import logging
 import os
 import sys
+from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+
+from db import init_db, cleanup_expired_cache  # noqa: E402
 
 logging.basicConfig(
     level=os.environ.get("LOG_LEVEL", "INFO").upper(),
@@ -17,6 +20,7 @@ logging.basicConfig(
 
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("aiosqlite").setLevel(logging.WARNING)
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +29,16 @@ from routers.auth import router as auth_router  # noqa: E402
 from routers.wikidata import router as wikidata_router  # noqa: E402
 
 
-app = FastAPI(title="Wikidata-OSM Matcher", version="0.1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    deleted = await cleanup_expired_cache()
+    if deleted > 0:
+        log.info(f"Cleaned up {deleted} expired label cache entries")
+    yield
+
+
+app = FastAPI(title="Wikidata-OSM Matcher", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
