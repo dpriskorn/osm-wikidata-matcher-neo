@@ -25,6 +25,7 @@ PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
     def execute_query(self, query: str) -> dict:
         full_query = self.SPARQL_PREFIXES + query
+        log.debug(f"SPARQL query:\n{full_query}\n---")
         params = {'query': full_query, 'action': 'json_export'}
         response = self.session.get(self.endpoint, params=params)
         response.raise_for_status()
