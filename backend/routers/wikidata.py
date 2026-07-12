@@ -18,6 +18,10 @@ def _fetch_label_cached(qid: str, lang: str) -> str | None:
     try:
         response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
+            content_type = response.headers.get('content-type', '')
+            if 'application/json' not in content_type:
+                log.warning(f"Non-JSON response for {qid}: status={response.status_code}, text={response.text[:100]}")
+                return None
             data = response.json()
             return data.get(qid, {}).get("value")
     except Exception as e:
@@ -28,4 +32,6 @@ def _fetch_label_cached(qid: str, lang: str) -> str | None:
 @router.get("/wikidata/{qid}/label")
 async def get_wikidata_label(qid: str, lang: str = "en"):
     label = _fetch_label_cached(qid, lang)
+    if label is None and lang != "en":
+        label = _fetch_label_cached(qid, "en")
     return {"qid": qid, "label": label or qid}
