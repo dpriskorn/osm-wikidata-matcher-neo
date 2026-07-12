@@ -18,12 +18,16 @@ def _fetch_label_cached(qid: str, lang: str) -> str | None:
     try:
         response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
-            content_type = response.headers.get('content-type', '')
-            if 'application/json' not in content_type:
-                log.warning(f"Non-JSON response for {qid}: status={response.status_code}, text={response.text[:100]}")
+            try:
+                data = response.json()
+                if isinstance(data, str):
+                    return data
+                return data.get(qid, {}).get("value")
+            except Exception:
+                text = response.text.strip()
+                if text and text != "null":
+                    return text
                 return None
-            data = response.json()
-            return data.get(qid, {}).get("value")
     except Exception as e:
         log.warning(f"Failed to fetch label for {qid}: {e}")
     return None
