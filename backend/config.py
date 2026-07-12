@@ -98,6 +98,8 @@ def get_all_configs() -> dict[str, ObjectTypeConfig]:
         for yaml_file in configs_dir.glob("*.yaml"):
             with open(yaml_file, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
+                if data is None:
+                    continue
                 obj_type = data["object_type"]
                 configs[obj_type] = ObjectTypeConfig(**data)
         _cached_configs = tuple(configs.items())
