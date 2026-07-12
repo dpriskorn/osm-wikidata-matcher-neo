@@ -59,6 +59,7 @@ just api
 # Run in terminal 2:
 just vite
 ```
+Tip: Or run in background with `just api &` and `just vite &`
 
 ### Manual Installation
 
