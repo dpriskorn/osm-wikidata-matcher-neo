@@ -34,6 +34,11 @@ def get_property_for_osm_type(config: ObjectTypeConfig, osm_type: str) -> str | 
     return config.wikidata.update_property
 
 
+def build_values_clause(qids: list[str]) -> str:
+    """Build SPARQL VALUES clause like 'wd:Q123 wd:Q456 wd:Q789'"""
+    return " ".join(f"wd:{qid}" for qid in qids)
+
+
 class ObjectTypeInfo(BaseModel):
     object_type: str
     label: str
@@ -127,8 +132,8 @@ async def get_countries(type_qid: str):
     object_type, config = get_config_by_qid(type_qid)
     settings = get_wikidata_settings()
     with WikidataClient() as wikidata:
-        results = wikidata.sparql_query(config.wikidata.sparql_query)
-        items = wikidata.parse_sparql_result(results, config.wikidata.label_property)
+        results = wikidata.sparql_query(config.wikidata.candidates.sparql_query)
+        items = wikidata.parse_sparql_result(results, config.wikidata.candidates.label_variable)
 
         country_counts: dict[str, tuple[str, int]] = {}
         for item in items:
@@ -149,13 +154,13 @@ async def get_divisions(type_qid: str, country_qid: str):
     object_type, config = get_config_by_qid(type_qid)
     settings = get_wikidata_settings()
 
-    query = config.wikidata.sparql_query
-    query = query.rstrip().rstrip('}')
-    query = query.replace('?item wdt:P17 ?country .', f'?item wdt:P17 wd:{country_qid} .')
-    query += '}'
-
     with WikidataClient() as wikidata:
-        results = wikidata.sparql_query(query)
+        candidates_query = config.wikidata.candidates.sparql_query
+        candidates_query = candidates_query.rstrip().rstrip('}')
+        candidates_query = candidates_query.replace('?item wdt:P17 ?country .', f'?item wdt:P17 wd:{country_qid} .')
+        candidates_query += '}'
+
+        results = wikidata.sparql_query(candidates_query)
 
         division_data: dict[str, dict] = {}
         for r in results:
@@ -167,19 +172,45 @@ async def get_divisions(type_qid: str, country_qid: str):
                 continue
 
             div_label = r.get("divisionLabel", {}).get("value") or div_qid
-            div_coord_str = r.get("divCoord", {}).get("value", "")
-            lat, lon = None, None
-            if div_coord_str:
-                coord_match = re.match(r"Point\(([^ ]+) ([^ ]+)\)", div_coord_str)
-                if coord_match:
-                    lon, lat = float(coord_match.group(1)), float(coord_match.group(2))
 
             if div_qid not in division_data:
-                division_data[div_qid] = {"label": div_label, "count": 0, "lat": lat, "lon": lon}
+                division_data[div_qid] = {"label": div_label, "count": 0}
             division_data[div_qid]["count"] += 1
 
+        division_qids = list(division_data.keys())
+        if not division_qids:
+            return []
+
+        values_clause = build_values_clause(division_qids)
+        div_coords_query = config.wikidata.division_coordinates.sparql_query
+        div_coords_query = div_coords_query.replace('{?divisions_values}', f'{{{values_clause}}}')
+        div_coords_query = div_coords_query.replace('?item wdt:P17 ?country .', f'?item wdt:P17 wd:{country_qid} .')
+
+        coord_results = wikidata.sparql_query(div_coords_query)
+        coord_map: dict[str, tuple[float, float]] = {}
+        for r in coord_results:
+            div_uri = r.get("item", {}).get("value", "")
+            if not div_uri:
+                continue
+            div_qid = wikidata._extract_qid(div_uri)
+            if not div_qid:
+                continue
+            coord_str = r.get("coord", {}).get("value", "")
+            if coord_str:
+                coord_match = re.match(r"Point\(([^ ]+) ([^ ]+)\)", coord_str)
+                if coord_match:
+                    lon, lat = float(coord_match.group(1)), float(coord_match.group(2))
+                    coord_map[div_qid] = (lat, lon)
+
+        for div_qid, data in division_data.items():
+            if div_qid in coord_map:
+                data["lat"], data["lon"] = coord_map[div_qid]
+            else:
+                data["lat"] = None
+                data["lon"] = None
+
         return [
-            DivisionInfo(qid=qid, label=data["label"], count=data["count"], lat=data["lat"], lon=data["lon"])
+            DivisionInfo(qid=qid, label=data["label"], count=data["count"], lat=data.get("lat"), lon=data.get("lon"))
             for qid, data in sorted(division_data.items(), key=lambda x: -x[1]["count"])
         ]
 
@@ -190,7 +221,7 @@ async def get_candidates_by_division(type_qid: str, country_qid: str, division_q
     object_type, config = get_config_by_qid(type_qid)
     settings = get_wikidata_settings()
 
-    query = config.wikidata.sparql_query
+    query = config.wikidata.candidates.sparql_query
     query = query.rstrip().rstrip('}')
     query = query.replace('?item wdt:P17 ?country .', f'?item wdt:P17 wd:{country_qid} .')
     query = query.replace('?item wdt:P131 ?division .', f'?item wdt:P131 wd:{division_qid} .')
@@ -198,7 +229,7 @@ async def get_candidates_by_division(type_qid: str, country_qid: str, division_q
 
     with WikidataClient() as wikidata:
         results = wikidata.sparql_query(query)
-        items = wikidata.parse_sparql_result(results, config.wikidata.label_property)
+        items = wikidata.parse_sparql_result(results, config.wikidata.candidates.label_variable)
         log.info(f"Returning {len(items)} candidates for {object_type} in {country_qid}/{division_qid}")
         return [
             CandidateInfo(

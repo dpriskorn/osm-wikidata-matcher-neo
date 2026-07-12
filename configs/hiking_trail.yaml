@@ -1,46 +1,46 @@
-object_type: hiking_trail
-label: "Vandringsleder"
-qid: Q2143825  # Hiking trail (path for hiking)
-experimental: true
-
-wikidata:
-  sparql_query: |
-    SELECT DISTINCT ?division ?divCoord ?country WHERE {
-      ?item wdt:P31 wd:Q2143825 .
-      ?item wdt:P17 ?country .
-      ?item wdt:P131 ?division .
-      ?division wdt:P625 ?divCoord .
-      MINUS { ?item wdt:P402 [] }
-    }
-  label_property: itemLabel
-  relation_property: P402
-  not_found_property: P9660
-  not_found_qualifier: P5017
-
-overpass:
-  query: |
-    [out:json][timeout:25];
-    relation["type"="route"]["route"="hiking"]({{bbox}});
-    out body;
-  bbox_from_country: true
-  country_bbox_map:
-    Q34: "55.5,10.5,69.5,24.5"  # Sweden
-    Q35: "58.5,4.5,70.5,31.5"   # Norway
-    Q37: "53.5,19.5,56.5,26.5"  # Lithuania (example)
-  fallback_bbox: "55.5,10.5,69.5,24.5"
-  timeout: 10
-
-matching:
-  method: name
-  similarity_threshold: 0.3
-  exclude_words:
-    - "trail"
-    - "led"
-    - "vandringsled"
-    - "stig"
-    - "rundtrip"
-    - "slingan"
-    - "kungsleden"
-    - "östgötaleden"
-    - "nordkalottleden"
-    - "leden"
+# object_type: hiking_trail
+# label: "Vandringsleder"
+# qid: Q2143825  # Hiking trail (path for hiking)
+# experimental: true
+#
+# wikidata:
+#   sparql_query: |
+#     SELECT DISTINCT ?division ?divCoord ?country WHERE {
+#       ?item wdt:P31 wd:Q2143825 .
+#       ?item wdt:P17 ?country .
+#       ?item wdt:P131 ?division .
+#       ?division wdt:P625 ?divCoord .
+#       MINUS { ?item wdt:P402 [] }
+#     }
+#   label_property: itemLabel
+#   relation_property: P402
+#   not_found_property: P9660
+#   not_found_qualifier: P5017
+#
+# overpass:
+#   query: |
+#     [out:json][timeout:25];
+#     relation["type"="route"]["route"="hiking"]({{bbox}});
+#     out body;
+#   bbox_from_country: true
+#   country_bbox_map:
+#     Q34: "55.5,10.5,69.5,24.5"  # Sweden
+#     Q35: "58.5,4.5,70.5,31.5"   # Norway
+#     Q37: "53.5,19.5,56.5,26.5"  # Lithuania (example)
+#   fallback_bbox: "55.5,10.5,69.5,24.5"
+#   timeout: 10
+#
+# matching:
+#   method: name
+#   similarity_threshold: 0.3
+#   exclude_words:
+#     - "trail"
+#     - "led"
+#     - "vandringsled"
+#     - "stig"
+#     - "rundtrip"
+#     - "slingan"
+#     - "kungsleden"
+#     - "östgötaleden"
+#     - "nordkalottleden"
+#     - "leden"

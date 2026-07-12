@@ -163,7 +163,7 @@ class WikidataClient:
             log.warning(f"Wikidata add_not_found_marker failed: {e}")
             return False
 
-    def parse_sparql_result(self, results: list[dict[str, any]], label_property: str) -> list[WikidataItem]:
+    def parse_sparql_result(self, results: list[dict[str, any]], label_variable: str) -> list[WikidataItem]:
         items: list[WikidataItem] = []
         for r in results:
             qid = self._extract_qid(r.get("item", {}).get("value", ""))
@@ -177,7 +177,7 @@ class WikidataClient:
 
             items.append(WikidataItem(
                 qid=qid,
-                label=r.get(label_property, {}).get("value", ""),
+                label=r.get(label_variable, {}).get("value", ""),
                 country=self._extract_qid(r.get("country", {}).get("value")),
                 country_label=r.get("countryLabel", {}).get("value"),
                 division=self._extract_qid(r.get("division", {}).get("value")),

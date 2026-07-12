@@ -28,16 +28,28 @@ class OsmSettings(BaseSettings):
     overpass_timeout: float = 10.0
 
 
-class WikidataConfig(BaseModel):
+class DivisionCoordinatesConfig(BaseModel):
     sparql_query: str
-    label_property: str
+    values_variable: str
+    country_variable: str
+    coord_variable: str
+
+
+class CandidatesConfig(BaseModel):
+    sparql_query: str
+    label_variable: str
+    coord_variable: str
+
+
+class WikidataConfig(BaseModel):
     node_property: Optional[str] = None
     way_property: Optional[str] = None
     relation_property: Optional[str] = None
     update_property: Optional[str] = None
     not_found_property: str
     not_found_qualifier: Optional[str] = None
-    coord_property: Optional[str] = None
+    division_coordinates: Optional[DivisionCoordinatesConfig] = None
+    candidates: Optional[CandidatesConfig] = None
 
 
 class OverpassQuery(BaseModel):
