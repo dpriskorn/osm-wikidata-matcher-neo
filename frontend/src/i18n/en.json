@@ -23,7 +23,6 @@
     "osmDataAge": "OSM data: {age}",
     "osmDataStale": "OSM data is more than 5 minutes old, refresh for fresh data",
     "justNow": "just now",
-    "refresh": "Refresh",
     "noMatchesFound": "No OSM candidates found.",
     "viewInOSM": "View in OSM ↗",
     "createInOSM": "Open in ID ↗",
