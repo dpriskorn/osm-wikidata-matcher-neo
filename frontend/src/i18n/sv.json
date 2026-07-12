@@ -1,7 +1,9 @@
 {
   "app": {
     "title": "Wikidata-OSM Matcher",
-    "changeObjectType": "Byt objekttyp"
+    "changeObjectType": "Byt objekttyp",
+    "radius": "Sökradie",
+    "radiusTooltip": "Hur långt från Wikidata-koordinaterna vi söker efter OSM-objekt"
   },
   "auth": {
     "notLoggedIn": "Inte inloggad",

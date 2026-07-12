@@ -1,7 +1,9 @@
 {
   "app": {
     "title": "Wikidata-OSM Matcher",
-    "changeObjectType": "Change object type"
+    "changeObjectType": "Change object type",
+    "radius": "Search radius",
+    "radiusTooltip": "How far from Wikidata coordinates to search for OSM objects"
   },
   "auth": {
     "notLoggedIn": "Not logged in",

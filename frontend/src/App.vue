@@ -97,7 +97,8 @@ onMounted(() => {
               </li>
             </ul>
           </div>
-          <div class="dropdown me-2">
+          <span class="text-muted small me-1 align-self-center">{{ t('app.radius') }}:</span>
+          <div class="dropdown me-2" data-bs-toggle="tooltip" :title="t('app.radiusTooltip')">
             <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
               {{ radiusOptions.find(r => r.value === selectedRadius)?.label || '500m' }}
             </button>
