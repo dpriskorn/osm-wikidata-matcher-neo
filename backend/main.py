@@ -22,6 +22,7 @@ log = logging.getLogger(__name__)
 
 from routers import matcher  # noqa: E402
 from routers.auth import router as auth_router  # noqa: E402
+from routers.wikidata import router as wikidata_router  # noqa: E402
 
 
 app = FastAPI(title="Wikidata-OSM Matcher", version="0.1.0")
@@ -36,6 +37,7 @@ app.add_middleware(
 
 app.include_router(matcher.router)
 app.include_router(auth_router)
+app.include_router(wikidata_router)
 
 
 @app.exception_handler(ValueError)
