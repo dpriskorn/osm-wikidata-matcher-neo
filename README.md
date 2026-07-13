@@ -10,15 +10,17 @@ The system fetches objects from Wikidata that are missing an OSM link (P402), pr
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Vue/Vite  │────▶│   FastAPI   │────▶│  Wikidata   │
+│   Vue/Vite  │◀───▶│   FastAPI   │◀───▶│    Qlever   │
 │  Frontend   │◀────│   Backend   │────▶│  (SPARQL)   │
 └─────────────┘     └──────┬──────┘     └─────────────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │  Overpass   │
-                    │    API      │
-                    └─────────────┘
+                            │
+                     ┌──────┴──────┐
+                     │             │
+                     ▼             ▼
+              ┌─────────────┐  ┌─────────────┐
+              │   Overpass  │  │   Wikidata  │
+              │     API     │  │  REST API   │
+              └─────────────┘  └─────────────┘
 ```
 
 ## Object Types
@@ -118,5 +120,5 @@ Matching combines fuzzy name matching, geographic proximity, and Wikidata tag de
 |-------|-----------|
 | Backend | FastAPI, Pydantic, httpx |
 | Frontend | Vue 3, Vite, TypeScript, Pinia |
-| Wikidata | SPARQL (Qlever) + EntityData API |
+| Wikidata | Qlever (SPARQL) + Wikidata REST API (labels) |
 | OSM | Overpass API |
