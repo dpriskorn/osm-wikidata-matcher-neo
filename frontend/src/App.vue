@@ -81,50 +81,55 @@ onMounted(() => {
     <nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
       <div class="container">
         <router-link to="/" class="navbar-brand mb-0 h1">{{ t('app.title') }}</router-link>
-        <div class="d-flex align-items-center">
-          <router-link v-if="route.path !== '/'" to="/" class="btn btn-outline-primary btn-sm me-2">
-            {{ t('app.changeObjectType') }}
-          </router-link>
-          <div class="dropdown me-2">
-            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-              {{ availableLocales.find(l => l.code === locale)?.name || locale }}
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li v-for="loc in availableLocales" :key="loc.code">
-                <button class="dropdown-item" :class="{ active: locale === loc.code }" @click="changeLocale(loc.code)">
-                  {{ loc.name }}
-                </button>
-              </li>
-            </ul>
-          </div>
-          <span class="text-muted small me-1 align-self-center">{{ t('app.radius') }}:</span>
-          <div class="dropdown me-2" data-bs-toggle="tooltip" :title="t('app.radiusTooltip')">
-            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-              {{ radiusOptions.find(r => r.value === selectedRadius)?.label || '500m' }}
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li v-for="r in radiusOptions" :key="r.value">
-                <button class="dropdown-item" :class="{ active: selectedRadius === r.value }" @click="setRadius(r.value)">
-                  {{ r.label }}
-                </button>
-              </li>
-            </ul>
-          </div>
-          <div class="dropdown">
-            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-              {{ authStatus.logged_in ? authStatus.username : t('auth.notLoggedIn') }}
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li v-if="authStatus.logged_in">
-                <span class="dropdown-item-text">{{ t('auth.loggedInAs', { username: authStatus.username }) }}</span>
-              </li>
-              <li v-if="authStatus.logged_in">
-                <button class="dropdown-item" @click="fetchAuthStatus">{{ t('auth.refresh') }}</button>
-              </li>
-              <li v-else>
-                <button class="dropdown-item disabled">{{ t('auth.loginWithWikimediaOAuth') }}</button>
-              </li>
-            </ul>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <div class="d-flex align-items-center ms-auto">
+            <router-link v-if="route.path !== '/'" to="/" class="btn btn-outline-primary btn-sm me-2">
+              {{ t('app.changeObjectType') }}
+            </router-link>
+            <div class="dropdown me-2">
+              <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                {{ availableLocales.find(l => l.code === locale)?.name || locale }}
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li v-for="loc in availableLocales" :key="loc.code">
+                  <button class="dropdown-item" :class="{ active: locale === loc.code }" @click="changeLocale(loc.code)">
+                    {{ loc.name }}
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <span class="text-muted small me-1 align-self-center">{{ t('app.radius') }}:</span>
+            <div class="dropdown me-2" data-bs-toggle="tooltip" :title="t('app.radiusTooltip')">
+              <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                {{ radiusOptions.find(r => r.value === selectedRadius)?.label || '500m' }}
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li v-for="r in radiusOptions" :key="r.value">
+                  <button class="dropdown-item" :class="{ active: selectedRadius === r.value }" @click="setRadius(r.value)">
+                    {{ r.label }}
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                {{ authStatus.logged_in ? authStatus.username : t('auth.notLoggedIn') }}
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li v-if="authStatus.logged_in">
+                  <span class="dropdown-item-text">{{ t('auth.loggedInAs', { username: authStatus.username }) }}</span>
+                </li>
+                <li v-if="authStatus.logged_in">
+                  <button class="dropdown-item" @click="fetchAuthStatus">{{ t('auth.refresh') }}</button>
+                </li>
+                <li v-else>
+                  <button class="dropdown-item disabled">{{ t('auth.loginWithWikimediaOAuth') }}</button>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
