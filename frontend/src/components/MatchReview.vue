@@ -242,7 +242,7 @@ function filteredTags(tags: Record<string, string>): Record<string, string> {
   <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
       <button @click="router.push(`/${typeQid}/${countryQid}/${divisionQid}`)" class="btn btn-sm btn-outline-secondary">← Tillbaka</button>
-      <span class="fw-bold">{{ label || qid }}</span>
+      <span class="fw-bold">{{ label }}</span>
       <div class="btn-group btn-group-sm">
         <button @click="copyQid" class="btn btn-outline-secondary" title="Copy QID">
           📋 {{ qid }}
@@ -253,10 +253,16 @@ function filteredTags(tags: Record<string, string>): Record<string, string> {
         <a v-if="data?.badkartan" :href="`https://www.badkartan.se/${data.badkartan}`" target="_blank" class="btn btn-info">
           Badkartan ↗
         </a>
+        <a :href="`https://www.badkartan.se/ajax.php?action=get_addresses&q=${encodeURIComponent(label)}&more=no`" target="_blank" class="btn btn-outline-secondary btn-sm">
+          🔍 Badkartan
+        </a>
+        <a :href="`https://www.google.com/search?q=${encodeURIComponent(label)}`" target="_blank" class="btn btn-outline-secondary btn-sm">
+          🔍 Google
+        </a>
+        <a :href="`https://www.naturkartan.se/sv/search/?query=${encodeURIComponent(label)}`" target="_blank" class="btn btn-outline-secondary btn-sm">
+          🌲 Naturkartan
+        </a>
       </div>
-      <small class="text-muted">
-        {{ authStatus.logged_in ? authStatus.username : t('auth.notLoggedIn') }}
-      </small>
     </div>
     <div class="card-body">
       <p v-if="loading" class="text-muted">{{ t('matchReview.loading') }}</p>
