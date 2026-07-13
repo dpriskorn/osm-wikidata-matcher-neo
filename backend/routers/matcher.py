@@ -55,6 +55,7 @@ class CandidateInfo(BaseModel):
     division_label: str | None = None
     coord: WikidataCoordinates | None = None
     badkartan: str | None = None
+    naturkartan: str | None = None
 
 
 class CountryInfo(BaseModel):
@@ -95,6 +96,7 @@ class MatchResponse(BaseModel):
     error: str | None = None
     osm_timestamp: str | None = None
     badkartan: str | None = None
+    naturkartan: str | None = None
 
 
 class ConfirmRequest(BaseModel):
@@ -240,6 +242,7 @@ async def get_candidates_by_division(type_qid: str, country_qid: str, division_q
                 division_label=item.division_label,
                 coord=item.coord,
                 badkartan=item.badkartan,
+                naturkartan=item.naturkartan,
             )
             for item in items
         ]
@@ -281,6 +284,7 @@ async def get_matches(type_qid: str, country_qid: str, division_qid: str, qid: s
                 coord=item.coord,
                 osm_timestamp=osm_timestamp,
                 badkartan=item.badkartan,
+                naturkartan=item.naturkartan,
             )
         except OverpassError as e:
             log.error(f"Overpass error for {qid}: {e.message}")
@@ -291,6 +295,7 @@ async def get_matches(type_qid: str, country_qid: str, division_qid: str, qid: s
                 coord=item.coord,
                 error=e.message,
                 badkartan=item.badkartan,
+                naturkartan=item.naturkartan,
             )
 
 

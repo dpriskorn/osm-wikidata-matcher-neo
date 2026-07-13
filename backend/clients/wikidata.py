@@ -47,6 +47,7 @@ class WikidataItem(BaseModel):
     division_label: str | None = None
     coord: WikidataCoordinates | None = None
     badkartan: str | None = None
+    naturkartan: str | None = None
 
 
 class WikidataClient:
@@ -105,6 +106,10 @@ class WikidataClient:
         if 'P9615' in claims:
             badkartan = claims['P9615'][0]['mainsnak']['datavalue']['value']
 
+        naturkartan = None
+        if 'P10467' in claims:
+            naturkartan = claims['P10467'][0]['mainsnak']['datavalue']['value']
+
         country = None
         if 'P17' in claims:
             country = claims['P17'][0]['mainsnak']['datavalue']['value']
@@ -120,6 +125,7 @@ class WikidataClient:
             country=country,
             coord=coord,
             badkartan=badkartan,
+            naturkartan=naturkartan,
         )
 
     def update_property(self, qid: str, property_id: str, value: str) -> bool:
@@ -184,6 +190,7 @@ class WikidataClient:
                 division_label=r.get("divisionLabel", {}).get("value"),
                 coord=coord,
                 badkartan=r.get("badkartan", {}).get("value"),
+                naturkartan=r.get("naturkartan", {}).get("value"),
             ))
         log.info(f"Parsed {len(items)} Wikidata items from {len(results)} bindings")
         return items

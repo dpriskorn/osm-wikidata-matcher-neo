@@ -253,14 +253,17 @@ function filteredTags(tags: Record<string, string>): Record<string, string> {
         <a v-if="data?.badkartan" :href="`https://www.badkartan.se/${data.badkartan}`" target="_blank" class="btn btn-info">
           Badkartan ↗
         </a>
-        <a :href="`https://www.badkartan.se/ajax.php?action=get_addresses&q=${encodeURIComponent(label)}&more=no`" target="_blank" class="btn btn-outline-secondary btn-sm">
+        <a v-else :href="`https://www.badkartan.se/ajax.php?action=get_addresses&q=${encodeURIComponent(label)}&more=no`" target="_blank" class="btn btn-outline-secondary btn-sm">
           🔍 Badkartan
+        </a>
+        <a v-if="data?.naturkartan" :href="`https://api.naturkartan.se/${data.naturkartan}`" target="_blank" class="btn btn-info">
+          Naturkartan ↗
+        </a>
+        <a v-else :href="`https://www.naturkartan.se/sv/search/?query=${encodeURIComponent(label)}`" target="_blank" class="btn btn-outline-secondary btn-sm">
+          🌲 Naturkartan
         </a>
         <a :href="`https://www.google.com/search?q=${encodeURIComponent(label)}`" target="_blank" class="btn btn-outline-secondary btn-sm">
           🔍 Google
-        </a>
-        <a :href="`https://www.naturkartan.se/sv/search/?query=${encodeURIComponent(label)}`" target="_blank" class="btn btn-outline-secondary btn-sm">
-          🌲 Naturkartan
         </a>
       </div>
     </div>

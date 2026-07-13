@@ -20,6 +20,7 @@ export interface CandidateInfo {
   division_label: string | null
   coord: { lat: number; lon: number } | null
   badkartan?: string
+  naturkartan?: string
 }
 
 export interface CountryInfo {
@@ -60,6 +61,7 @@ export interface MatchResponse {
   error: string | null
   osm_timestamp: string | null
   badkartan?: string
+  naturkartan?: string
 }
 
 export async function getObjectTypes(): Promise<ObjectTypeInfo[]> {
