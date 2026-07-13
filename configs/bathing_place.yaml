@@ -35,7 +35,6 @@ wikidata:
         OPTIONAL { ?item wdt:P10467 ?naturkartan }
         OPTIONAL { ?item wdt:P373 ?commons }
         OPTIONAL { ?item schema:about ?s . ?s schema:isPartOf <https://commons.wikimedia.org/> }
-        FILTER (BOUND(?commons) || BOUND(?s))
         BIND(COALESCE(?commons, ?s) AS ?commonsSitelink)
         MINUS { ?item wdt:P10689 [] } # way
         MINUS { ?item wdt:P402 [] } # rel
