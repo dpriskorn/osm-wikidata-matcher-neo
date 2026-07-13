@@ -25,6 +25,7 @@ wikidata:
     sparql_query: |
       PREFIX wd: <http://www.wikidata.org/entity/>
       PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+      PREFIX schema: <https://schema.org/>
       SELECT DISTINCT ?item ?coord ?division ?country ?badkartan ?naturkartan ?commons ?commonsSitelink WHERE {
         ?item wdt:P31/wdt:P279* wd:Q567998 .
         ?item wdt:P625 ?coord .
