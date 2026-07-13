@@ -80,7 +80,7 @@ onMounted(() => {
     <HealthBanner />
     <nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
       <div class="container">
-        <span class="navbar-brand mb-0 h1">{{ t('app.title') }}</span>
+        <router-link to="/" class="navbar-brand mb-0 h1">{{ t('app.title') }}</router-link>
         <div class="d-flex align-items-center">
           <router-link v-if="route.path !== '/'" to="/" class="btn btn-outline-primary btn-sm me-2">
             {{ t('app.changeObjectType') }}
